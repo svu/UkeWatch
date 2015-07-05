@@ -24,6 +24,7 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.os.Bundle;
@@ -42,7 +43,7 @@ import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
-import ie.udaltsoft.simplewatch.R;
+import ie.udaltsoft.ukewatch.R;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
@@ -67,14 +68,16 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         static final float MINUTE_HAND_SCALE = 1.15f;
 
         static final float NAIL_RATIO = 0.7f;
+        static final float MARK_RATIO = 0.3f;
+        static final float MARK_OFFSET_RATIO = 0.1f;
 
         Paint mBackgroundPaint;
         Paint mHandPaint;
         boolean mAmbient;
         GregorianCalendar mTime;
 
-        int centerX;
-        int centerY;
+        float centerX;
+        float centerY;
 
         float secLength;
         float minLength;
@@ -83,8 +86,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private SVG hourSvg;
         private SVG minuteSvg;
 
-        private Point hourRotationPoint;
-        private Point minuteRotationPoint;
+        private PointF hourRotationPoint;
+        private PointF minuteRotationPoint;
 
         private RectF hourHandRect;
         private RectF minuteHandRect;
@@ -122,6 +125,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
          * disable anti-aliasing in ambient mode.
          */
         boolean mLowBitAmbient;
+        private SVG threeOCSvg;
+        private SVG sixOCSvg;
+        private SVG nineOCSvg;
+        private SVG twelveOCSvg;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -145,6 +152,19 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mHandPaint.setStrokeCap(Paint.Cap.ROUND);
 
             mTime = new GregorianCalendar();
+
+            try {
+                hourSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
+                minuteSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
+
+                threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
+                sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
+                nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc);
+                twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc);
+            } catch (SVGParseException ex) {
+                System.err.println(ex);
+                ex.printStackTrace();
+            }
         }
 
         @Override
@@ -201,30 +221,79 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 canvas.drawLine(centerX, centerY, centerX + secX, centerY + secY, mHandPaint);
             }
 
+            PointF markBounds = new PointF(MARK_RATIO * centerX, MARK_RATIO * centerY);
+
+            // 12
+            canvas.save();
+            canvas.translate(centerX, centerY * MARK_OFFSET_RATIO);
+            float scale = Math.min(markBounds.x / twelveOCSvg.getDocumentWidth(),
+                                   markBounds.y / twelveOCSvg.getDocumentHeight());
+            canvas.translate(-twelveOCSvg.getDocumentWidth() * scale / 2f, 0);
+            canvas.scale(scale, scale);
+            twelveOCSvg.renderToCanvas(canvas);
+            canvas.restore();
+
+            // 9
+            canvas.save();
+            canvas.translate(centerX * MARK_OFFSET_RATIO, centerY);
+            scale = Math.min(markBounds.x / nineOCSvg.getDocumentWidth(),
+                             markBounds.y / nineOCSvg.getDocumentHeight());
+            canvas.translate(0, -nineOCSvg.getDocumentHeight() * scale / 2f);
+            canvas.scale(scale, scale);
+            nineOCSvg.renderToCanvas(canvas);
+            canvas.restore();
+
+            // 6
+            canvas.save();
+            canvas.translate(centerX, centerY * (2 - MARK_RATIO - MARK_OFFSET_RATIO));
+            scale = Math.min(markBounds.x / sixOCSvg.getDocumentWidth(),
+                             markBounds.y / sixOCSvg.getDocumentHeight());
+            canvas.translate(-sixOCSvg.getDocumentWidth() * scale / 2f,
+                             markBounds.y - sixOCSvg.getDocumentHeight() * scale);
+            canvas.scale(scale, scale);
+            sixOCSvg.renderToCanvas(canvas);
+            canvas.restore();
+
+            // 3
+            canvas.save();
+            canvas.translate(centerX * (2 - MARK_RATIO - MARK_OFFSET_RATIO), centerY);
+            scale = Math.min(markBounds.x / threeOCSvg.getDocumentWidth(),
+                             markBounds.y / threeOCSvg.getDocumentHeight());
+            canvas.translate(markBounds.x - threeOCSvg.getDocumentWidth() * scale,
+                             -threeOCSvg.getDocumentHeight() * scale / 2f);
+            canvas.scale(scale, scale);
+            threeOCSvg.renderToCanvas(canvas);
+            canvas.restore();
+
+            // minute
             canvas.save();
             renderHand(canvas,
-                       mTime.get(GregorianCalendar.MINUTE) * 6,
-                       MINUTE_HAND_SCALE,
-                       minuteHandRect,
-                       minuteRotationPoint,
-                       minuteSvg);
+                    mTime.get(GregorianCalendar.MINUTE) * 6,
+                    MINUTE_HAND_SCALE,
+                    minuteHandRect,
+                    minuteRotationPoint,
+                    minuteSvg);
             canvas.restore();
+
+            // hour
+            canvas.save();
             renderHand(canvas,
-                       (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                       HOUR_HAND_SCALE,
-                       hourHandRect,
-                       hourRotationPoint,
-                       hourSvg);
+                    (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
+                    HOUR_HAND_SCALE,
+                    hourHandRect,
+                    hourRotationPoint,
+                    hourSvg);
+            canvas.restore();
         }
 
         private void renderHand(Canvas canvas,
                                 float angle,
                                 float handScale,
                                 RectF rect,
-                                Point rotationPoint,
+                                PointF rotationPoint,
                                 SVG svg)
         {
-            final Point p = new Point(centerX - rotationPoint.x,
+            final PointF p = new PointF(centerX - rotationPoint.x,
                                       centerY - rotationPoint.y);
             canvas.translate(p.x, p.y);
             canvas.rotate(angle, rotationPoint.x, rotationPoint.y);
@@ -287,18 +356,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             minLength = centerX - 40;
             hrLength = centerX - 80;
 
-            try {
-                hourSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
-                minuteSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
-            } catch (SVGParseException ex) {
-                System.err.println(ex);
-                ex.printStackTrace();
-            }
-
-            hourRotationPoint = new Point((int)(centerX * HOUR_HAND_SCALE / 2),
-                    (int)(centerY * HOUR_HAND_SCALE * NAIL_RATIO));
-            minuteRotationPoint = new Point((int)(centerX * MINUTE_HAND_SCALE / 2),
-                    (int)(centerY * MINUTE_HAND_SCALE * NAIL_RATIO));
+            hourRotationPoint = new PointF(centerX * HOUR_HAND_SCALE / 2,
+                    centerY * HOUR_HAND_SCALE * NAIL_RATIO);
+            minuteRotationPoint = new PointF(centerX * MINUTE_HAND_SCALE / 2,
+                    centerY * MINUTE_HAND_SCALE * NAIL_RATIO);
 
             hourHandRect = new RectF(0, 0,
                                      centerX * HOUR_HAND_SCALE,
