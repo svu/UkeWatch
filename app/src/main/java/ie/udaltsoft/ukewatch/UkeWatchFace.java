@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -68,10 +69,14 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         static final float MINUTE_HAND_SCALE = 1.15f;
 
         static final float NAIL_RATIO = 0.7f;
+
+        static final float MARK12_RATIO = 0.5f;
         static final float MARK_RATIO = 0.3f;
         static final float MARK_OFFSET_RATIO = 0.1f;
 
         Paint mBackgroundPaint;
+        Paint mBackgroundPaintAmbient;
+
         Paint mHandPaint;
         boolean mAmbient;
         GregorianCalendar mTime;
@@ -142,8 +147,11 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
             Resources resources = UkeWatchFace.this.getResources();
 
+            mBackgroundPaintAmbient = new Paint();
+            mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background));
+
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.analog_background));
+            mBackgroundPaint.setColor(resources.getColor(R.color.uke_colors));
 
             mHandPaint = new Paint();
             mHandPaint.setColor(resources.getColor(R.color.analog_hands));
@@ -162,7 +170,6 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc);
                 twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc);
             } catch (SVGParseException ex) {
-                System.err.println(ex);
                 ex.printStackTrace();
             }
         }
@@ -206,7 +213,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mTime.setTime(new Date());
 
             // Draw the background.
-            canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
+            if (mAmbient)
+                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaintAmbient);
+            else
+                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
 
             // Find the center. Ignore the window insets so that, on round watches with a
             // "chin", the watch face is centered on the entire screen, not just the usable
@@ -222,12 +232,13 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             }
 
             PointF markBounds = new PointF(MARK_RATIO * centerX, MARK_RATIO * centerY);
+            PointF mark12Bounds = new PointF(MARK12_RATIO * centerX, MARK12_RATIO * centerY);
 
             // 12
             canvas.save();
             canvas.translate(centerX, centerY * MARK_OFFSET_RATIO);
-            float scale = Math.min(markBounds.x / twelveOCSvg.getDocumentWidth(),
-                                   markBounds.y / twelveOCSvg.getDocumentHeight());
+            float scale = Math.min(mark12Bounds.x / twelveOCSvg.getDocumentWidth(),
+                                   mark12Bounds.y / twelveOCSvg.getDocumentHeight());
             canvas.translate(-twelveOCSvg.getDocumentWidth() * scale / 2f, 0);
             canvas.scale(scale, scale);
             twelveOCSvg.renderToCanvas(canvas);
