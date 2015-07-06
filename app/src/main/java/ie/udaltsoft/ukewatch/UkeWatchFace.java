@@ -148,10 +148,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             Resources resources = UkeWatchFace.this.getResources();
 
             mBackgroundPaintAmbient = new Paint();
-            mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background));
+            mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background_ambient));
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.uke_colors));
+            mBackgroundPaint.setColor(resources.getColor(R.color.analog_background));
 
             mHandPaint = new Paint();
             mHandPaint.setColor(resources.getColor(R.color.analog_hands));
