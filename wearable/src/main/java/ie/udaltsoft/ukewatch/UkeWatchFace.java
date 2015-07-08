@@ -21,10 +21,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -43,8 +42,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-
-import ie.udaltsoft.ukewatch.R;
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
@@ -73,6 +70,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         static final float MARK12_RATIO = 0.5f;
         static final float MARK_RATIO = 0.3f;
         static final float MARK_OFFSET_RATIO = 0.1f;
+        static final float MARK_HOUR_RATIO = 0.2f;
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
@@ -88,11 +86,15 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         float minLength;
         float hrLength;
 
-        private SVG hourSvg;
-        private SVG minuteSvg;
+        private SVG hourHandSvg;
+        private SVG minuteHandSvg;
 
         private PointF hourRotationPoint;
         private PointF minuteRotationPoint;
+
+        private PointF markBounds;
+        private PointF mark12Bounds;
+        private PointF markHourBounds;
 
         private RectF hourHandRect;
         private RectF minuteHandRect;
@@ -134,6 +136,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private SVG sixOCSvg;
         private SVG nineOCSvg;
         private SVG twelveOCSvg;
+        private float[] scales;
+        private Bitmap[] majorBitmap;
+        private SVG hourSvg;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -162,13 +167,15 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mTime = new GregorianCalendar();
 
             try {
-                hourSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
-                minuteSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
+                hourHandSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
+                minuteHandSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
                 nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc);
                 twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc);
+
+                hourSvg = SVG.getFromResource(getResources(), R.raw.hour);
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
@@ -231,50 +238,35 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 canvas.drawLine(centerX, centerY, centerX + secX, centerY + secY, mHandPaint);
             }
 
-            PointF markBounds = new PointF(MARK_RATIO * centerX, MARK_RATIO * centerY);
-            PointF mark12Bounds = new PointF(MARK12_RATIO * centerX, MARK12_RATIO * centerY);
-
             // 12
-            canvas.save();
-            canvas.translate(centerX, centerY * MARK_OFFSET_RATIO);
-            float scale = Math.min(mark12Bounds.x / twelveOCSvg.getDocumentWidth(),
-                                   mark12Bounds.y / twelveOCSvg.getDocumentHeight());
-            canvas.translate(-twelveOCSvg.getDocumentWidth() * scale / 2f, 0);
-            canvas.scale(scale, scale);
-            twelveOCSvg.renderToCanvas(canvas);
-            canvas.restore();
-
-            // 9
-            canvas.save();
-            canvas.translate(centerX * MARK_OFFSET_RATIO, centerY);
-            scale = Math.min(markBounds.x / nineOCSvg.getDocumentWidth(),
-                             markBounds.y / nineOCSvg.getDocumentHeight());
-            canvas.translate(0, -nineOCSvg.getDocumentHeight() * scale / 2f);
-            canvas.scale(scale, scale);
-            nineOCSvg.renderToCanvas(canvas);
-            canvas.restore();
-
-            // 6
-            canvas.save();
-            canvas.translate(centerX, centerY * (2 - MARK_RATIO - MARK_OFFSET_RATIO));
-            scale = Math.min(markBounds.x / sixOCSvg.getDocumentWidth(),
-                             markBounds.y / sixOCSvg.getDocumentHeight());
-            canvas.translate(-sixOCSvg.getDocumentWidth() * scale / 2f,
-                             markBounds.y - sixOCSvg.getDocumentHeight() * scale);
-            canvas.scale(scale, scale);
-            sixOCSvg.renderToCanvas(canvas);
-            canvas.restore();
+            canvas.drawBitmap(majorBitmap[0],
+                    centerX - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
+                    centerY * MARK_OFFSET_RATIO,
+                    null);
 
             // 3
-            canvas.save();
-            canvas.translate(centerX * (2 - MARK_RATIO - MARK_OFFSET_RATIO), centerY);
-            scale = Math.min(markBounds.x / threeOCSvg.getDocumentWidth(),
-                             markBounds.y / threeOCSvg.getDocumentHeight());
-            canvas.translate(markBounds.x - threeOCSvg.getDocumentWidth() * scale,
-                             -threeOCSvg.getDocumentHeight() * scale / 2f);
-            canvas.scale(scale, scale);
-            threeOCSvg.renderToCanvas(canvas);
-            canvas.restore();
+            canvas.drawBitmap(majorBitmap[1],
+                    centerX * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.x - threeOCSvg.getDocumentWidth() * scales[1],
+                    centerY - threeOCSvg.getDocumentHeight() * scales[1] / 2f,
+                    null);
+
+            // 6
+            canvas.drawBitmap(majorBitmap[2],
+                    centerX - sixOCSvg.getDocumentWidth() * scales[2] / 2f,
+                    centerY * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.y - sixOCSvg.getDocumentHeight() * scales[2],
+                    null);
+
+            // 9
+            canvas.drawBitmap(majorBitmap[3],
+                    centerX * MARK_OFFSET_RATIO,
+                    centerY - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
+                    null);
+
+            /*canvas.drawBitmap(majorBitmap[4],
+                    centerX * 3 / 2f,
+                    centerY * 3 / 2f,
+                    null);
+            */
 
             // minute
             canvas.save();
@@ -283,7 +275,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     MINUTE_HAND_SCALE,
                     minuteHandRect,
                     minuteRotationPoint,
-                    minuteSvg);
+                    minuteHandSvg);
             canvas.restore();
 
             // hour
@@ -293,7 +285,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     HOUR_HAND_SCALE,
                     hourHandRect,
                     hourRotationPoint,
-                    hourSvg);
+                    hourHandSvg);
             canvas.restore();
         }
 
@@ -380,6 +372,30 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                                        centerX * MINUTE_HAND_SCALE,
                                        centerY * MINUTE_HAND_SCALE);
 
+            markBounds = new PointF(MARK_RATIO * centerX, MARK_RATIO * centerY);
+            mark12Bounds = new PointF(MARK12_RATIO * centerX, MARK12_RATIO * centerY);
+            markHourBounds = new PointF(MARK_HOUR_RATIO * centerX, MARK_HOUR_RATIO * centerY);
+
+            majorBitmap = new Bitmap[5];
+            scales = new float[5];
+
+            createMajorBitmap(twelveOCSvg, mark12Bounds, 0);
+            createMajorBitmap(threeOCSvg, markBounds, 1);
+            createMajorBitmap(sixOCSvg, markBounds, 2);
+            createMajorBitmap(nineOCSvg, markBounds, 3);
+            createMajorBitmap(hourSvg, markHourBounds, 4);
+        }
+
+        private void createMajorBitmap(SVG svg, PointF bounds, int idx) {
+            scales[idx] = Math.min(bounds.x / svg.getDocumentWidth(),
+                    bounds.y / svg.getDocumentHeight());
+
+            majorBitmap[idx] = Bitmap.createBitmap((int)(svg.getDocumentWidth() * scales[idx]),
+                    (int)(svg.getDocumentHeight() * scales[idx]),
+                    Bitmap.Config.ARGB_8888);
+            Canvas canvas = new Canvas(majorBitmap[idx]);
+            canvas.scale(scales[idx], scales[idx]);
+            svg.renderToCanvas(canvas);
         }
 
         /**
