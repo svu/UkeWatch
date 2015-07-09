@@ -70,7 +70,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         static final float MARK12_RATIO = 0.5f;
         static final float MARK_RATIO = 0.3f;
         static final float MARK_OFFSET_RATIO = 0.1f;
-        static final float MARK_HOUR_RATIO = 0.2f;
+        static final float MARK_HOUR_RATIO = 0.1f;
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
@@ -139,6 +139,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private float[] scales;
         private Bitmap[] majorBitmap;
         private SVG hourSvg;
+        private PointF[] markHourLocations;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -262,11 +263,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     centerY - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
 
-            /*canvas.drawBitmap(majorBitmap[4],
-                    centerX * 3 / 2f,
-                    centerY * 3 / 2f,
-                    null);
-            */
+            for (PointF markHourLocation : markHourLocations) {
+                canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
+            }
 
             // minute
             canvas.save();
@@ -384,6 +383,22 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             createMajorBitmap(sixOCSvg, markBounds, 2);
             createMajorBitmap(nineOCSvg, markBounds, 3);
             createMajorBitmap(hourSvg, markHourBounds, 4);
+
+            markHourLocations = new PointF[8];
+            final double angles[] = new double[8];
+            angles[0] = 30 * Math.PI / 180;
+            angles[1] = 60 * Math.PI / 180;
+            angles[2] = 120 * Math.PI / 180;
+            angles[3] = 150 * Math.PI / 180;
+            angles[4] = 210 * Math.PI / 180;
+            angles[5] = 240 * Math.PI / 180;
+            angles[6] = 300 * Math.PI / 180;
+            angles[7] = 330 * Math.PI / 180;
+
+            for (int i=0; i<angles.length; i++) {
+                markHourLocations[i] = new PointF(centerX * (float) (1 + Math.sin(angles[i]) * (1 - MARK_HOUR_RATIO - MARK_OFFSET_RATIO)) - majorBitmap[4].getWidth() / 2f,
+                        centerY * (float) (1 - Math.cos(angles[i]) * (1 - MARK_HOUR_RATIO - MARK_OFFSET_RATIO)) - majorBitmap[4].getHeight() / 2f);
+            }
         }
 
         private void createMajorBitmap(SVG svg, PointF bounds, int idx) {
