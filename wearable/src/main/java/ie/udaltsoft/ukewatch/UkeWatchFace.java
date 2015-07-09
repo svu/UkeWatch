@@ -33,6 +33,7 @@ import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.view.SurfaceHolder;
+import android.view.WindowInsets;
 
 
 import com.caverock.androidsvg.SVG;
@@ -67,8 +68,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         static final float NAIL_RATIO = 0.7f;
 
-        static final float MARK12_RATIO = 0.5f;
-        static final float MARK_RATIO = 0.3f;
+        static final float MARK12_RATIO = 0.4f;
+        static final float MARK_RATIO = 0.2f;
         static final float MARK_OFFSET_RATIO = 0.1f;
         static final float MARK_HOUR_RATIO = 0.1f;
 
@@ -140,6 +141,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private Bitmap[] majorBitmap;
         private SVG hourSvg;
         private PointF[] markHourLocations;
+        private boolean isRound;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -180,6 +182,12 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
+        }
+
+        @Override
+        public void onApplyWindowInsets(WindowInsets wi) {
+            isRound = wi.isRound();
+            markHourLocations = null;
         }
 
         @Override
@@ -262,6 +270,11 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     centerX * MARK_OFFSET_RATIO,
                     centerY - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
+
+            // delayed calculation
+            if (markHourLocations == null) {
+                calcMarkHourLocations(majorBitmap[4]);
+            }
 
             for (PointF markHourLocation : markHourLocations) {
                 canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
@@ -384,6 +397,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             createMajorBitmap(nineOCSvg, markBounds, 3);
             createMajorBitmap(hourSvg, markHourBounds, 4);
 
+            markHourLocations = null;
+        }
+
+        private void calcMarkHourLocations(Bitmap bitmap) {
             markHourLocations = new PointF[8];
             final double angles[] = new double[8];
             angles[0] = 30 * Math.PI / 180;
@@ -395,9 +412,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             angles[6] = 300 * Math.PI / 180;
             angles[7] = 330 * Math.PI / 180;
 
+            final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
             for (int i=0; i<angles.length; i++) {
-                markHourLocations[i] = new PointF(centerX * (float) (1 + Math.sin(angles[i]) * (1 - MARK_HOUR_RATIO - MARK_OFFSET_RATIO)) - majorBitmap[4].getWidth() / 2f,
-                        centerY * (float) (1 - Math.cos(angles[i]) * (1 - MARK_HOUR_RATIO - MARK_OFFSET_RATIO)) - majorBitmap[4].getHeight() / 2f);
+                markHourLocations[i] = new PointF(centerX * (float) (1 + Math.sin(angles[i]) * (1 - hourRatio - MARK_OFFSET_RATIO)) - bitmap.getWidth() / 2f,
+                        centerY * (float) (1 - Math.cos(angles[i]) * (1 - hourRatio - MARK_OFFSET_RATIO)) - bitmap.getHeight() / 2f);
             }
         }
 
