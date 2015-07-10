@@ -63,15 +63,31 @@ public class UkeWatchFace extends CanvasWatchFaceService {
     private class Engine extends CanvasWatchFaceService.Engine {
         static final int MSG_UPDATE_TIME = 0;
 
-        static final float HOUR_HAND_SCALE = 0.95f;
-        static final float MINUTE_HAND_SCALE = 1.15f;
-
+        // Hands
+        static final float HOUR_HAND_RATIO = 0.95f;
+        static final float MINUTE_HAND_RATIO = 1.15f;
+        // Where is the nail on the hands?
         static final float NAIL_RATIO = 0.7f;
 
+        // 12 o'clock size
         static final float MARK12_RATIO = 0.4f;
+        // 3, 6, 9 o'clock mark size
         static final float MARK_RATIO = 0.2f;
+        // offset of marks from the border
         static final float MARK_OFFSET_RATIO = 0.1f;
+        // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
         static final float MARK_HOUR_RATIO = 0.1f;
+
+        final double HOUR_ANGELS[] = new double[] {
+                30 * Math.PI / 180,
+                60 * Math.PI / 180,
+                120 * Math.PI / 180,
+                150 * Math.PI / 180,
+                210 * Math.PI / 180,
+                240 * Math.PI / 180,
+                300 * Math.PI / 180,
+                330 * Math.PI / 180
+        };
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
@@ -80,12 +96,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         boolean mAmbient;
         GregorianCalendar mTime;
 
-        float centerX;
-        float centerY;
+        PointF center;
 
         float secLength;
-        float minLength;
-        float hrLength;
 
         private SVG hourHandSvg;
         private SVG minuteHandSvg;
@@ -133,6 +146,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
          * disable anti-aliasing in ambient mode.
          */
         boolean mLowBitAmbient;
+
         private SVG threeOCSvg;
         private SVG sixOCSvg;
         private SVG nineOCSvg;
@@ -244,31 +258,31 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             if (!mAmbient) {
                 float secX = (float) Math.sin(secRot) * secLength;
                 float secY = (float) -Math.cos(secRot) * secLength;
-                canvas.drawLine(centerX, centerY, centerX + secX, centerY + secY, mHandPaint);
+                canvas.drawLine(center.x, center.y, center.x + secX, center.y + secY, mHandPaint);
             }
 
             // 12
             canvas.drawBitmap(majorBitmap[0],
-                    centerX - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
-                    centerY * MARK_OFFSET_RATIO,
+                    center.x - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
+                    center.y * MARK_OFFSET_RATIO,
                     null);
 
             // 3
             canvas.drawBitmap(majorBitmap[1],
-                    centerX * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.x - threeOCSvg.getDocumentWidth() * scales[1],
-                    centerY - threeOCSvg.getDocumentHeight() * scales[1] / 2f,
+                    center.x * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.x - threeOCSvg.getDocumentWidth() * scales[1],
+                    center.y - threeOCSvg.getDocumentHeight() * scales[1] / 2f,
                     null);
 
             // 6
             canvas.drawBitmap(majorBitmap[2],
-                    centerX - sixOCSvg.getDocumentWidth() * scales[2] / 2f,
-                    centerY * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.y - sixOCSvg.getDocumentHeight() * scales[2],
+                    center.x - sixOCSvg.getDocumentWidth() * scales[2] / 2f,
+                    center.y * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.y - sixOCSvg.getDocumentHeight() * scales[2],
                     null);
 
             // 9
             canvas.drawBitmap(majorBitmap[3],
-                    centerX * MARK_OFFSET_RATIO,
-                    centerY - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
+                    center.x * MARK_OFFSET_RATIO,
+                    center.y - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
 
             // delayed calculation
@@ -284,7 +298,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             canvas.save();
             renderHand(canvas,
                     mTime.get(GregorianCalendar.MINUTE) * 6,
-                    MINUTE_HAND_SCALE,
+                    MINUTE_HAND_RATIO,
                     minuteHandRect,
                     minuteRotationPoint,
                     minuteHandSvg);
@@ -294,7 +308,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             canvas.save();
             renderHand(canvas,
                     (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                    HOUR_HAND_SCALE,
+                    HOUR_HAND_RATIO,
                     hourHandRect,
                     hourRotationPoint,
                     hourHandSvg);
@@ -308,8 +322,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                                 PointF rotationPoint,
                                 SVG svg)
         {
-            final PointF p = new PointF(centerX - rotationPoint.x,
-                                      centerY - rotationPoint.y);
+            final PointF p = new PointF(center.x - rotationPoint.x,
+                                      center.y - rotationPoint.y);
             canvas.translate(p.x, p.y);
             canvas.rotate(angle, rotationPoint.x, rotationPoint.y);
             svg.renderToCanvas(canvas, rect);
@@ -364,30 +378,33 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             super.onSurfaceChanged(holder, format, width, height);
-            centerX = width / 2;
-            centerY = height / 2;
+            center = new PointF (width / 2f, height / 2f);
 
-            secLength = centerX - 20;
-            minLength = centerX - 40;
-            hrLength = centerX - 80;
+            secLength = center.x - 20;
 
-            hourRotationPoint = new PointF(centerX * HOUR_HAND_SCALE / 2,
-                    centerY * HOUR_HAND_SCALE * NAIL_RATIO);
-            minuteRotationPoint = new PointF(centerX * MINUTE_HAND_SCALE / 2,
-                    centerY * MINUTE_HAND_SCALE * NAIL_RATIO);
+            hourRotationPoint = new PointF(center.x * HOUR_HAND_RATIO / 2,
+                    center.y * HOUR_HAND_RATIO * NAIL_RATIO);
+            minuteRotationPoint = new PointF(center.x * MINUTE_HAND_RATIO / 2,
+                    center.y * MINUTE_HAND_RATIO * NAIL_RATIO);
 
             hourHandRect = new RectF(0, 0,
-                                     centerX * HOUR_HAND_SCALE,
-                                     centerY * HOUR_HAND_SCALE);
+                                     center.x * HOUR_HAND_RATIO,
+                                     center.y * HOUR_HAND_RATIO);
 
             minuteHandRect = new RectF(0, 0,
-                                       centerX * MINUTE_HAND_SCALE,
-                                       centerY * MINUTE_HAND_SCALE);
+                                       center.x * MINUTE_HAND_RATIO,
+                                       center.y * MINUTE_HAND_RATIO);
 
-            markBounds = new PointF(MARK_RATIO * centerX, MARK_RATIO * centerY);
-            mark12Bounds = new PointF(MARK12_RATIO * centerX, MARK12_RATIO * centerY);
-            markHourBounds = new PointF(MARK_HOUR_RATIO * centerX, MARK_HOUR_RATIO * centerY);
+            markBounds = new PointF(MARK_RATIO * center.x, MARK_RATIO * center.y);
+            mark12Bounds = new PointF(MARK12_RATIO * center.x, MARK12_RATIO * center.y);
+            markHourBounds = new PointF(MARK_HOUR_RATIO * center.x, MARK_HOUR_RATIO * center.y);
 
+            createMajorBitmaps();
+
+            markHourLocations = null;
+        }
+
+        private void createMajorBitmaps() {
             majorBitmap = new Bitmap[5];
             scales = new float[5];
 
@@ -396,26 +413,16 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             createMajorBitmap(sixOCSvg, markBounds, 2);
             createMajorBitmap(nineOCSvg, markBounds, 3);
             createMajorBitmap(hourSvg, markHourBounds, 4);
-
-            markHourLocations = null;
         }
 
         private void calcMarkHourLocations(Bitmap bitmap) {
             markHourLocations = new PointF[8];
-            final double angles[] = new double[8];
-            angles[0] = 30 * Math.PI / 180;
-            angles[1] = 60 * Math.PI / 180;
-            angles[2] = 120 * Math.PI / 180;
-            angles[3] = 150 * Math.PI / 180;
-            angles[4] = 210 * Math.PI / 180;
-            angles[5] = 240 * Math.PI / 180;
-            angles[6] = 300 * Math.PI / 180;
-            angles[7] = 330 * Math.PI / 180;
-
             final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
-            for (int i=0; i<angles.length; i++) {
-                markHourLocations[i] = new PointF(centerX * (float) (1 + Math.sin(angles[i]) * (1 - hourRatio - MARK_OFFSET_RATIO)) - bitmap.getWidth() / 2f,
-                        centerY * (float) (1 - Math.cos(angles[i]) * (1 - hourRatio - MARK_OFFSET_RATIO)) - bitmap.getHeight() / 2f);
+            final float offset = 1 - hourRatio - MARK_OFFSET_RATIO;
+            final PointF halfSize = new PointF(bitmap.getWidth()/2f, bitmap.getHeight()/2f);
+            for (int i=0; i<HOUR_ANGELS.length; i++) {
+                markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGELS[i]) * offset) - halfSize.x,
+                        center.y * (float) (1 - Math.cos(HOUR_ANGELS[i]) * offset) - halfSize.y);
             }
         }
 
