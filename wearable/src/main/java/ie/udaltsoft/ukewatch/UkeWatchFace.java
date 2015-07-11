@@ -39,6 +39,8 @@ import android.view.WindowInsets;
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
@@ -112,6 +114,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         private RectF hourHandRect;
         private RectF minuteHandRect;
+
+        private DateFormat dateFormat = new SimpleDateFormat("EEE, MMM d");
+
 
         /**
          * Handler to update the time once a second in interactive mode.
@@ -240,7 +245,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
-            mTime.setTime(new Date());
+            Date d = new Date();
+            //d.setHours(13);d.setMinutes(50);
+            mTime.setTime(d);
 
             // Draw the background.
             if (mAmbient)
@@ -251,16 +258,6 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             // Find the center. Ignore the window insets so that, on round watches with a
             // "chin", the watch face is centered on the entire screen, not just the usable
             // portion.
-            float secRot = mTime.get(GregorianCalendar.SECOND) / 30f * (float) Math.PI;
-            float minRot = mTime.get(GregorianCalendar.MINUTE) / 30f * (float) Math.PI;
-            float hrRot = ((mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) / 6f) * (float) Math.PI;
-
-            if (!mAmbient) {
-                float secX = (float) Math.sin(secRot) * secLength;
-                float secY = (float) -Math.cos(secRot) * secLength;
-                canvas.drawLine(center.x, center.y, center.x + secX, center.y + secY, mHandPaint);
-            }
-
             // 12
             canvas.drawBitmap(majorBitmap[0],
                     center.x - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
@@ -294,7 +291,24 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
             }
 
-            // minute
+            final String dateFormatted = dateFormat.format(d);
+            mHandPaint.setTextSize(24);
+
+            final Rect dateBounds = new Rect();
+            mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), dateBounds);
+            canvas.drawText(dateFormatted, center.x - dateBounds.width() / 2f,
+                    center.y * 3 / 2 + dateBounds.height() / 2f, mHandPaint);
+
+            // second hand, optional
+            if (!mAmbient) {
+                float secRot = mTime.get(GregorianCalendar.SECOND) / 30f * (float) Math.PI;
+
+                float secX = (float) Math.sin(secRot) * secLength;
+                float secY = (float) -Math.cos(secRot) * secLength;
+                canvas.drawLine(center.x, center.y, center.x + secX, center.y + secY, mHandPaint);
+            }
+
+            // minute hand
             canvas.save();
             renderHand(canvas,
                     mTime.get(GregorianCalendar.MINUTE) * 6,
@@ -304,7 +318,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     minuteHandSvg);
             canvas.restore();
 
-            // hour
+            // hour hand
             canvas.save();
             renderHand(canvas,
                     (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
