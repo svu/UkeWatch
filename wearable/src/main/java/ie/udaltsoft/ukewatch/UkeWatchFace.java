@@ -104,6 +104,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         private SVG hourHandSvg;
         private SVG minuteHandSvg;
+        private SVG ambientHandSvg;
 
         private PointF hourRotationPoint;
         private PointF minuteRotationPoint;
@@ -185,12 +186,14 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mHandPaint.setStrokeWidth(resources.getDimension(R.dimen.analog_hand_stroke));
             mHandPaint.setAntiAlias(true);
             mHandPaint.setStrokeCap(Paint.Cap.ROUND);
+            mHandPaint.setTextSize(24);
 
             mTime = new GregorianCalendar();
 
             try {
                 hourHandSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
                 minuteHandSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
+                ambientHandSvg = SVG.getFromResource(getResources(), R.raw.ambient_hand);
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
@@ -282,51 +285,70 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     center.y - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
 
-            // delayed calculation
-            if (markHourLocations == null) {
-                calcMarkHourLocations(majorBitmap[4]);
-            }
-
-            for (PointF markHourLocation : markHourLocations) {
-                canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
-            }
-
             final String dateFormatted = dateFormat.format(d);
-            mHandPaint.setTextSize(24);
 
             final Rect dateBounds = new Rect();
             mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), dateBounds);
             canvas.drawText(dateFormatted, center.x - dateBounds.width() / 2f,
                     center.y * 3 / 2 + dateBounds.height() / 2f, mHandPaint);
 
-            // second hand, optional
             if (!mAmbient) {
+                // delayed calculation
+                if (markHourLocations == null) {
+                    calcMarkHourLocations(majorBitmap[4]);
+                }
+
+                for (PointF markHourLocation : markHourLocations) {
+                    canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
+                }
+
+                // second hand
                 float secRot = mTime.get(GregorianCalendar.SECOND) / 30f * (float) Math.PI;
 
                 float secX = (float) Math.sin(secRot) * secLength;
                 float secY = (float) -Math.cos(secRot) * secLength;
                 canvas.drawLine(center.x, center.y, center.x + secX, center.y + secY, mHandPaint);
+
+                // minute hand
+                canvas.save();
+                renderHand(canvas,
+                        mTime.get(GregorianCalendar.MINUTE) * 6,
+                        MINUTE_HAND_RATIO,
+                        minuteHandRect,
+                        minuteRotationPoint,
+                        minuteHandSvg);
+                canvas.restore();
+
+                // hour hand
+                canvas.save();
+                renderHand(canvas,
+                        (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
+                        HOUR_HAND_RATIO,
+                        hourHandRect,
+                        hourRotationPoint,
+                        hourHandSvg);
+                canvas.restore();
+            } else {
+                // minute hand
+                canvas.save();
+                renderHand(canvas,
+                        mTime.get(GregorianCalendar.MINUTE) * 6,
+                        MINUTE_HAND_RATIO,
+                        minuteHandRect,
+                        minuteRotationPoint,
+                        ambientHandSvg);
+                canvas.restore();
+
+                // hour hand
+                canvas.save();
+                renderHand(canvas,
+                        (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
+                        HOUR_HAND_RATIO,
+                        hourHandRect,
+                        hourRotationPoint,
+                        ambientHandSvg);
+                canvas.restore();
             }
-
-            // minute hand
-            canvas.save();
-            renderHand(canvas,
-                    mTime.get(GregorianCalendar.MINUTE) * 6,
-                    MINUTE_HAND_RATIO,
-                    minuteHandRect,
-                    minuteRotationPoint,
-                    minuteHandSvg);
-            canvas.restore();
-
-            // hour hand
-            canvas.save();
-            renderHand(canvas,
-                    (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                    HOUR_HAND_RATIO,
-                    hourHandRect,
-                    hourRotationPoint,
-                    hourHandSvg);
-            canvas.restore();
         }
 
         private void renderHand(Canvas canvas,
@@ -413,20 +435,20 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mark12Bounds = new PointF(MARK12_RATIO * center.x, MARK12_RATIO * center.y);
             markHourBounds = new PointF(MARK_HOUR_RATIO * center.x, MARK_HOUR_RATIO * center.y);
 
-            createMajorBitmaps();
+            createHourBitmaps();
 
             markHourLocations = null;
         }
 
-        private void createMajorBitmaps() {
+        private void createHourBitmaps() {
             majorBitmap = new Bitmap[5];
             scales = new float[5];
 
-            createMajorBitmap(twelveOCSvg, mark12Bounds, 0);
-            createMajorBitmap(threeOCSvg, markBounds, 1);
-            createMajorBitmap(sixOCSvg, markBounds, 2);
-            createMajorBitmap(nineOCSvg, markBounds, 3);
-            createMajorBitmap(hourSvg, markHourBounds, 4);
+            createHourBitmap(twelveOCSvg, mark12Bounds, 0);
+            createHourBitmap(threeOCSvg, markBounds, 1);
+            createHourBitmap(sixOCSvg, markBounds, 2);
+            createHourBitmap(nineOCSvg, markBounds, 3);
+            createHourBitmap(hourSvg, markHourBounds, 4);
         }
 
         private void calcMarkHourLocations(Bitmap bitmap) {
@@ -440,7 +462,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             }
         }
 
-        private void createMajorBitmap(SVG svg, PointF bounds, int idx) {
+        private void createHourBitmap(SVG svg, PointF bounds, int idx) {
             scales[idx] = Math.min(bounds.x / svg.getDocumentWidth(),
                     bounds.y / svg.getDocumentHeight());
 
