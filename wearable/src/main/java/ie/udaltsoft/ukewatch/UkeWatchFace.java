@@ -27,6 +27,7 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -40,6 +41,7 @@ import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
 
 import java.text.DateFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -147,6 +149,20 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         };
         boolean mRegisteredTimeZoneReceiver = false;
 
+        final BroadcastReceiver mBatteryReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                final Intent batteryStatus = UkeWatchFace.this.registerReceiver(null, batFilter);
+                try {
+                    final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                    final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                    batteryPct = level / (float)scale;
+                } catch (NullPointerException ex) {
+                    batteryPct = 0f;
+                }
+            }
+        };
+
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -162,6 +178,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private SVG hourSvg;
         private PointF[] markHourLocations;
         private boolean isRound;
+        private float batteryPct;
+        private IntentFilter batFilter;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -248,9 +266,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
-            Date d = new Date();
+            Date now = new Date();
             //d.setHours(13);d.setMinutes(50);
-            mTime.setTime(d);
+            mTime.setTime(now);
 
             // Draw the background.
             if (mAmbient)
@@ -285,12 +303,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                     center.y - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
 
-            final String dateFormatted = dateFormat.format(d);
+            displayDate(canvas, now);
 
-            final Rect dateBounds = new Rect();
-            mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), dateBounds);
-            canvas.drawText(dateFormatted, center.x - dateBounds.width() / 2f,
-                    center.y * 3 / 2 + dateBounds.height() / 2f, mHandPaint);
+            displayBattery(canvas);
 
             if (!mAmbient) {
                 // delayed calculation
@@ -365,6 +380,24 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             svg.renderToCanvas(canvas, rect);
         }
 
+        private void displayDate(Canvas canvas, Date d) {
+            final String dateFormatted = dateFormat.format(d);
+
+            final Rect bounds = new Rect();
+            mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), bounds);
+            canvas.drawText(dateFormatted, center.x - bounds.width() / 2f,
+                    center.y * 3 / 2 + bounds.height() / 2f, mHandPaint);
+        }
+
+        private void displayBattery(Canvas canvas) {
+            final String batFormatted =  NumberFormat.getPercentInstance().format(batteryPct);
+
+            final Rect bounds = new Rect();
+            mHandPaint.getTextBounds(batFormatted, 0, batFormatted.length(), bounds);
+            canvas.drawText(batFormatted, center.x - bounds.width() / 2f,
+                    center.y * 0.65f + bounds.height() / 2f, mHandPaint);
+        }
+
         @Override
         public void onVisibilityChanged(boolean visible) {
             super.onVisibilityChanged(visible);
@@ -390,6 +423,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mRegisteredTimeZoneReceiver = true;
             IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
             UkeWatchFace.this.registerReceiver(mTimeZoneReceiver, filter);
+            batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+            UkeWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
         }
 
         private void unregisterReceiver() {
@@ -398,6 +433,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             }
             mRegisteredTimeZoneReceiver = false;
             UkeWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
+            UkeWatchFace.this.unregisterReceiver(mBatteryReceiver);
         }
 
         /**
