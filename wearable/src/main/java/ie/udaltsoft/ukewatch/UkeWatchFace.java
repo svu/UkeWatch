@@ -119,6 +119,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private RectF minuteHandRect;
 
         private DateFormat dateFormat = new SimpleDateFormat("EEE, MMM d");
+        private NumberFormat batteryFormat = NumberFormat.getPercentInstance();
 
 
         /**
@@ -180,6 +181,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private boolean isRound;
         private float batteryPct;
         private IntentFilter batFilter;
+        private IntentFilter tzFilter;
 
         @Override
         public void onCreate(SurfaceHolder holder) {
@@ -390,7 +392,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         }
 
         private void displayBattery(Canvas canvas) {
-            final String batFormatted =  NumberFormat.getPercentInstance().format(batteryPct);
+            final String batFormatted =  batteryFormat.format(batteryPct);
 
             final Rect bounds = new Rect();
             mHandPaint.getTextBounds(batFormatted, 0, batFormatted.length(), bounds);
@@ -421,8 +423,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 return;
             }
             mRegisteredTimeZoneReceiver = true;
-            IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-            UkeWatchFace.this.registerReceiver(mTimeZoneReceiver, filter);
+            tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
+            UkeWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
+
             batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
             UkeWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
         }
