@@ -80,7 +80,16 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         // offset of marks from the border
         static final float MARK_OFFSET_RATIO = 0.1f;
         // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
-        static final float MARK_HOUR_RATIO = 0.1f;
+        static final float MARK_HOUR_RATIO = 0.04f;
+        // battery note size
+        static final float MARK_NOTE_RATIO = 0.08f;
+
+        static final float STAFF_X_RATIO_START = 0.2f;
+        static final float STAFF_X_RATIO_END = 0.55f;
+
+        static final float STAFF_Y_RATIO_START = 0.5f;
+        static final float STAFF_Y_RATIO_END = 0.8f;
+        // 0.5 0.575 0.65 0.725 0.8
 
         final double HOUR_ANGELS[] = new double[] {
                 30 * Math.PI / 180,
@@ -95,6 +104,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
+        Paint mStaffPaint;
 
         Paint mHandPaint;
         boolean mAmbient;
@@ -114,6 +124,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private PointF markBounds;
         private PointF mark12Bounds;
         private PointF markHourBounds;
+        private PointF markNoteBounds;
 
         private RectF hourHandRect;
         private RectF minuteHandRect;
@@ -174,12 +185,16 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         private SVG sixOCSvg;
         private SVG nineOCSvg;
         private SVG twelveOCSvg;
+
+        private SVG hourSvg;
+        private SVG noteSvg;
+
         private float[] scales;
         private Bitmap[] majorBitmap;
-        private SVG hourSvg;
         private PointF[] markHourLocations;
         private boolean isRound;
         private float batteryPct;
+
         private IntentFilter batFilter;
         private IntentFilter tzFilter;
 
@@ -208,12 +223,18 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mHandPaint.setStrokeCap(Paint.Cap.ROUND);
             mHandPaint.setTextSize(24);
 
+            mStaffPaint = new Paint();
+            mStaffPaint.setColor(resources.getColor(R.color.analog_hands));
+            mStaffPaint.setStrokeWidth(resources.getDimension(R.dimen.staff_stroke));
+            mStaffPaint.setAntiAlias(true);
+            mStaffPaint.setStrokeCap(Paint.Cap.ROUND);
+
             mTime = new GregorianCalendar();
 
             try {
-                hourHandSvg = SVG.getFromResource(getResources(), R.raw.hour_hand);
-                minuteHandSvg = SVG.getFromResource(getResources(), R.raw.minute_hand);
-                ambientHandSvg = SVG.getFromResource(getResources(), R.raw.ambient_hand);
+                hourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_hour_hand);
+                minuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_minute_hand);
+                ambientHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
@@ -221,6 +242,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc);
 
                 hourSvg = SVG.getFromResource(getResources(), R.raw.hour);
+
+                noteSvg = SVG.getFromResource(getResources(), R.raw.note);
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
@@ -269,7 +292,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
             Date now = new Date();
-            //d.setHours(13);d.setMinutes(50);
+            //now.setHours(19);now.setMinutes(50);
             mTime.setTime(now);
 
             // Draw the background.
@@ -307,9 +330,9 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
             displayDate(canvas, now);
 
-            displayBattery(canvas);
-
             if (!mAmbient) {
+                displayBattery(canvas);
+
                 // delayed calculation
                 if (markHourLocations == null) {
                     calcMarkHourLocations(majorBitmap[4]);
@@ -392,12 +415,35 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         }
 
         private void displayBattery(Canvas canvas) {
-            final String batFormatted =  batteryFormat.format(batteryPct);
+            /*final String batFormatted =  batteryFormat.format(batteryPct);
 
             final Rect bounds = new Rect();
             mHandPaint.getTextBounds(batFormatted, 0, batFormatted.length(), bounds);
             canvas.drawText(batFormatted, center.x - bounds.width() / 2f,
                     center.y * 0.65f + bounds.height() / 2f, mHandPaint);
+            */
+            final Bitmap noteBmp = majorBitmap[5];
+
+            final float xmin = center.x * (1 + STAFF_X_RATIO_START);
+            final float xmax = center.x * (1 + STAFF_X_RATIO_END);
+            final float ymin = center.y * STAFF_Y_RATIO_START;
+            final float ymax = center.y * STAFF_Y_RATIO_END;
+            float ycur = ymin;
+            final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
+            for (int i = 0;i<5;i++) {
+                canvas.drawLine(xmin,
+                        ycur,
+                        xmax,
+                        ycur,
+                        mStaffPaint);
+                ycur += ystep;
+            }
+            final int batteryNoteLevel = (int)Math.floor(this.batteryPct * 11);
+            final float ynote = ymax - ystep * (batteryNoteLevel / 2f);
+            canvas.drawBitmap(noteBmp,
+                    (xmax + xmin)/2 - noteBmp.getWidth()/2,
+                    ynote, mStaffPaint);
+
         }
 
         @Override
@@ -473,21 +519,23 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             markBounds = new PointF(MARK_RATIO * center.x, MARK_RATIO * center.y);
             mark12Bounds = new PointF(MARK12_RATIO * center.x, MARK12_RATIO * center.y);
             markHourBounds = new PointF(MARK_HOUR_RATIO * center.x, MARK_HOUR_RATIO * center.y);
+            markNoteBounds = new PointF(MARK_NOTE_RATIO * center.x, MARK_NOTE_RATIO * center.y);
 
-            createHourBitmaps();
+            createBitmapsFromSvgs();
 
             markHourLocations = null;
         }
 
-        private void createHourBitmaps() {
-            majorBitmap = new Bitmap[5];
-            scales = new float[5];
+        private void createBitmapsFromSvgs() {
+            majorBitmap = new Bitmap[6];
+            scales = new float[6];
 
-            createHourBitmap(twelveOCSvg, mark12Bounds, 0);
-            createHourBitmap(threeOCSvg, markBounds, 1);
-            createHourBitmap(sixOCSvg, markBounds, 2);
-            createHourBitmap(nineOCSvg, markBounds, 3);
-            createHourBitmap(hourSvg, markHourBounds, 4);
+            createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false, false);
+            createBitmapFromSvg(threeOCSvg, markBounds, 1, false, false);
+            createBitmapFromSvg(sixOCSvg, markBounds, 2, false, false);
+            createBitmapFromSvg(nineOCSvg, markBounds, 3, false, false);
+            createBitmapFromSvg(hourSvg, markHourBounds, 4, false, false);
+            createBitmapFromSvg(noteSvg, markNoteBounds, 5, false, true);
         }
 
         private void calcMarkHourLocations(Bitmap bitmap) {
@@ -501,13 +549,15 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             }
         }
 
-        private void createHourBitmap(SVG svg, PointF bounds, int idx) {
-            scales[idx] = Math.min(bounds.x / svg.getDocumentWidth(),
-                    bounds.y / svg.getDocumentHeight());
+        private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedX, boolean isForcedY) {
+            scales[idx] = isForcedX ? bounds.x / svg.getDocumentWidth() :
+                    isForcedY ? bounds.y / svg.getDocumentHeight() :
+                            Math.min(bounds.x / svg.getDocumentWidth(), bounds.y / svg.getDocumentHeight());
 
-            majorBitmap[idx] = Bitmap.createBitmap((int)(svg.getDocumentWidth() * scales[idx]),
-                    (int)(svg.getDocumentHeight() * scales[idx]),
+            majorBitmap[idx] = Bitmap.createBitmap(Math.round(svg.getDocumentWidth() * scales[idx]),
+                    Math.round(svg.getDocumentHeight() * scales[idx]),
                     Bitmap.Config.ARGB_8888);
+
             Canvas canvas = new Canvas(majorBitmap[idx]);
             canvas.scale(scales[idx], scales[idx]);
             svg.renderToCanvas(canvas);
