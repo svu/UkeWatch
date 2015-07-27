@@ -81,15 +81,15 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         static final float MARK_OFFSET_RATIO = 0.1f;
         // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
         static final float MARK_HOUR_RATIO = 0.04f;
-        // battery note size
-        static final float MARK_NOTE_RATIO = 0.08f;
 
         static final float STAFF_X_RATIO_START = 0.2f;
         static final float STAFF_X_RATIO_END = 0.55f;
 
-        static final float STAFF_Y_RATIO_START = 0.5f;
-        static final float STAFF_Y_RATIO_END = 0.8f;
+        static final float STAFF_Y_RATIO_START = 0.45f;
+        static final float STAFF_Y_RATIO_END = 0.75f;
         // 0.5 0.575 0.65 0.725 0.8
+        // battery note size
+        static final float MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
 
         final double HOUR_ANGELS[] = new double[] {
                 30 * Math.PI / 180,
@@ -438,10 +438,17 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                         mStaffPaint);
                 ycur += ystep;
             }
-            final int batteryNoteLevel = (int)Math.floor(this.batteryPct * 11);
-            final float ynote = ymax - ystep * (batteryNoteLevel / 2f);
+            final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 11);
+            float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
-                    (xmax + xmin)/2 - noteBmp.getWidth()/2,
+                    xmin + (xmax - xmin)*0.25f - noteBmp.getWidth()/2,
+                    ynote, mStaffPaint);
+
+            // TODO
+            final int phoneBatteryNoteLevel = 2;
+            ynote = ymax - ystep * (phoneBatteryNoteLevel / 2f);
+            canvas.drawBitmap(noteBmp,
+                    xmin + (xmax - xmin)*0.75f - noteBmp.getWidth()/2,
                     ynote, mStaffPaint);
 
         }
