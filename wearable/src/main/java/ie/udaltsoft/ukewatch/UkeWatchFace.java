@@ -438,7 +438,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                         mStaffPaint);
                 ycur += ystep;
             }
-            final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 11);
+            final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
                     xmin + (xmax - xmin)*0.25f - noteBmp.getWidth()/2,
