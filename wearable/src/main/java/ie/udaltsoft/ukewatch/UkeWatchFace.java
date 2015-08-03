@@ -116,7 +116,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
 
         private SVG hourHandSvg;
         private SVG minuteHandSvg;
-        private SVG ambientHandSvg;
+        private SVG ambientHourHandSvg;
+        private SVG ambientMinuteHandSvg;
 
         private PointF hourRotationPoint;
         private PointF minuteRotationPoint;
@@ -232,9 +233,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             mTime = new GregorianCalendar();
 
             try {
-                hourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_hour_hand);
-                minuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_minute_hand);
-                ambientHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
+                createViolinHands();
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
@@ -247,6 +246,20 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
+        }
+
+        private void createUkeHands() throws SVGParseException {
+            hourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_hour_hand);
+            minuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_minute_hand);
+            ambientHourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
+            ambientMinuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
+        }
+
+        private void createViolinHands() throws SVGParseException {
+            hourHandSvg = SVG.getFromResource(getResources(), R.raw.violin_hour_hand);
+            minuteHandSvg = SVG.getFromResource(getResources(), R.raw.violin_minute_hand);
+            ambientHourHandSvg = SVG.getFromResource(getResources(), R.raw.violin_ambient_hour_hand);
+            ambientMinuteHandSvg = SVG.getFromResource(getResources(), R.raw.violin_ambient_minute_hand);
         }
 
         @Override
@@ -376,7 +389,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                         MINUTE_HAND_RATIO,
                         minuteHandRect,
                         minuteRotationPoint,
-                        ambientHandSvg);
+                        ambientMinuteHandSvg);
                 canvas.restore();
 
                 // hour hand
@@ -386,7 +399,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                         HOUR_HAND_RATIO,
                         hourHandRect,
                         hourRotationPoint,
-                        ambientHandSvg);
+                        ambientHourHandSvg);
                 canvas.restore();
             }
         }
@@ -415,13 +428,6 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         }
 
         private void displayBattery(Canvas canvas) {
-            /*final String batFormatted =  batteryFormat.format(batteryPct);
-
-            final Rect bounds = new Rect();
-            mHandPaint.getTextBounds(batFormatted, 0, batFormatted.length(), bounds);
-            canvas.drawText(batFormatted, center.x - bounds.width() / 2f,
-                    center.y * 0.65f + bounds.height() / 2f, mHandPaint);
-            */
             final Bitmap noteBmp = majorBitmap[5];
 
             final float xmin = center.x * (1 + STAFF_X_RATIO_START);
@@ -441,15 +447,15 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
-                    xmin + (xmax - xmin)*0.25f - noteBmp.getWidth()/2,
+                    xmin + (xmax - xmin)*0.5f - noteBmp.getWidth()/2,
                     ynote, mStaffPaint);
 
             // TODO
-            final int phoneBatteryNoteLevel = 2;
+            /*final int phoneBatteryNoteLevel = 2;
             ynote = ymax - ystep * (phoneBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
                     xmin + (xmax - xmin)*0.75f - noteBmp.getWidth()/2,
-                    ynote, mStaffPaint);
+                    ynote, mStaffPaint);*/
 
         }
 
