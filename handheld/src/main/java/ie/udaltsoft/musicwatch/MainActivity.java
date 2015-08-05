@@ -1,4 +1,4 @@
-package ie.udaltsoft.ukewatch;
+package ie.udaltsoft.musicwatch;
 
 import android.app.Activity;
 import android.os.Bundle;

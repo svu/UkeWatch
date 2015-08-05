@@ -5,7 +5,7 @@ android {
     buildToolsVersion "22.0.1"
 
     defaultConfig {
-        applicationId "ie.udaltsoft.ukewatch"
+        applicationId "ie.udaltsoft.musicwatch"
         minSdkVersion 21
         targetSdkVersion 21
         versionCode 1

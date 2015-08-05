@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ie.udaltsoft.ukewatch;
+package ie.udaltsoft.musicwatch;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -52,7 +52,7 @@ import java.util.concurrent.TimeUnit;
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
  * devices with low-bit ambient mode, the hands are drawn without anti-aliasing in ambient mode.
  */
-public class UkeWatchFace extends CanvasWatchFaceService {
+public class MusicWatchFace extends CanvasWatchFaceService {
     /**
      * Update rate in milliseconds for interactive mode. We update once a second to advance the
      * second hand.
@@ -165,7 +165,7 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         final BroadcastReceiver mBatteryReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                final Intent batteryStatus = UkeWatchFace.this.registerReceiver(null, batFilter);
+                final Intent batteryStatus = MusicWatchFace.this.registerReceiver(null, batFilter);
                 try {
                     final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                     final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
@@ -203,13 +203,13 @@ public class UkeWatchFace extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            setWatchFaceStyle(new WatchFaceStyle.Builder(UkeWatchFace.this)
+            setWatchFaceStyle(new WatchFaceStyle.Builder(MusicWatchFace.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setShowSystemUiTime(false)
                     .build());
 
-            Resources resources = UkeWatchFace.this.getResources();
+            Resources resources = MusicWatchFace.this.getResources();
 
             mBackgroundPaintAmbient = new Paint();
             mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background_ambient));
@@ -483,10 +483,10 @@ public class UkeWatchFace extends CanvasWatchFaceService {
             }
             mRegisteredTimeZoneReceiver = true;
             tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-            UkeWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
+            MusicWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
 
             batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-            UkeWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
+            MusicWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
         }
 
         private void unregisterReceiver() {
@@ -494,8 +494,8 @@ public class UkeWatchFace extends CanvasWatchFaceService {
                 return;
             }
             mRegisteredTimeZoneReceiver = false;
-            UkeWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
-            UkeWatchFace.this.unregisterReceiver(mBatteryReceiver);
+            MusicWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
+            MusicWatchFace.this.unregisterReceiver(mBatteryReceiver);
         }
 
         /**

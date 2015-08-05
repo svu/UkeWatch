@@ -1,4 +1,15 @@
 <resources>
-    <string name="app_name">Ukulele Watch</string>
-    <string name="my_analog_name">Ukulele Watch</string>
+    <string name="app_name">Music Watch</string>
+    <string name="my_analog_name">Music Watch</string>
+    <string name="music_config_name">Music watch face configuration</string>
+    <string name="music_instrument">Instrument</string>
+
+    <string name="instrument_uke">Ukulele</string>
+    <string name="instrument_violin">Violin</string>
+
+    <string-array name="instruments_array">
+        <item>@string/instrument_uke</item>
+        <item>@string/instrument_violin</item>
+    </string-array>
+
 </resources>
