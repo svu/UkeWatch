@@ -4,8 +4,8 @@
     <string name="music_config_name">Music watch face configuration</string>
     <string name="music_instrument">Instrument</string>
 
-    <string name="instrument_uke">Ukulele</string>
-    <string name="instrument_violin">Violin</string>
+    <string name="instrument_uke">ukulele</string>
+    <string name="instrument_violin">violin</string>
 
     <string-array name="instruments_array">
         <item>@string/instrument_uke</item>

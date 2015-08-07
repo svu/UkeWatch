@@ -1,22 +1,25 @@
 package ie.udaltsoft.musicwatch;
 
-import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.PointF;
 import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.BoxInsetLayout;
-import android.support.wearable.view.CircledImageView;
 import android.support.wearable.view.WearableListView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.caverock.androidsvg.SVG;
+import com.caverock.androidsvg.SVGParseException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataMap;
@@ -59,8 +62,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         listView.setClickListener(this);
         listView.addOnScrollListener(this);
 
-        String[] colors = getResources().getStringArray(R.array.instruments_array);
-        listView.setAdapter(new ColorListAdapter(colors));
+        String[] instruments = getResources().getStringArray(R.array.instruments_array);
+        listView.setAdapter(new InstrumentListAdapter(instruments));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
@@ -107,7 +110,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     @Override // WearableListView.ClickListener
     public void onClick(WearableListView.ViewHolder viewHolder) {
         InstrumentItemViewHolder colorItemViewHolder = (InstrumentItemViewHolder) viewHolder;
-        updateConfigDataItem(colorItemViewHolder.mColorItem.getColor());
+        updateConfigDataItem(colorItemViewHolder.mColorItem.getInstrumentId());
         finish();
     }
 
@@ -129,18 +132,18 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     @Override // WearableListView.OnScrollListener
     public void onCentralPositionChanged(int centralPosition) {}
 
-    private void updateConfigDataItem(final int backgroundColor) {
+    private void updateConfigDataItem(final String instument) {
         DataMap configKeysToOverwrite = new DataMap();
-        configKeysToOverwrite.putInt(MusicWatchFaceUtil.KEY_INSTRUMENT,
-                backgroundColor);
+        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_INSTRUMENT,
+                instument);
         MusicWatchFaceUtil.overwriteKeysInConfigDataMap(mGoogleApiClient, configKeysToOverwrite);
     }
 
-    private class ColorListAdapter extends WearableListView.Adapter {
-        private final String[] mColors;
+    private class InstrumentListAdapter extends WearableListView.Adapter {
+        private final String[] mInstruments;
 
-        public ColorListAdapter(String[] colors) {
-            mColors = colors;
+        public InstrumentListAdapter(String[] instruments) {
+            mInstruments = instruments;
         }
 
         @Override
@@ -151,8 +154,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         @Override
         public void onBindViewHolder(WearableListView.ViewHolder holder, int position) {
             InstrumentItemViewHolder colorItemViewHolder = (InstrumentItemViewHolder) holder;
-            String colorName = mColors[position];
-            colorItemViewHolder.mColorItem.setColor(colorName);
+            String instrumentName = mInstruments[position];
+            colorItemViewHolder.mColorItem.setInstrumentId(instrumentName);
 
             RecyclerView.LayoutParams layoutParams =
                     new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -162,7 +165,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
             // Add margins to first and last item to make it possible for user to tap on them.
             if (position == 0) {
                 layoutParams.setMargins(0, colorPickerItemMargin, 0, 0);
-            } else if (position == mColors.length - 1) {
+            } else if (position == mInstruments.length - 1) {
                 layoutParams.setMargins(0, 0, 0, colorPickerItemMargin);
             } else {
                 layoutParams.setMargins(0, 0, 0, 0);
@@ -172,99 +175,112 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
         @Override
         public int getItemCount() {
-            return mColors.length;
+            return mInstruments.length;
         }
     }
 
-    /** The layout of a color item including image and label. */
+    /** The layout of a instrument item. */
     private static class InstrumentItem extends LinearLayout implements
             WearableListView.OnCenterProximityListener {
         /** The duration of the expand/shrink animation. */
         private static final int ANIMATION_DURATION_MS = 150;
-        /** The ratio for the size of a circle in shrink state. */
-        private static final float SHRINK_CIRCLE_RATIO = .75f;
 
-        private static final float SHRINK_LABEL_ALPHA = .5f;
-        private static final float EXPAND_LABEL_ALPHA = 1f;
+        private static final float SHRINK_PREVIEW_ALPHA = .5f;
+        private static final float EXPAND_PREVIEW_ALPHA = 1f;
 
-        private final TextView mLabel;
-        private final CircledImageView mColor;
+        private static final float MAX_BMP_SIZE = 1000;
 
-        private final float mExpandCircleRadius;
-        private final float mShrinkCircleRadius;
+        private final ImageView mInstrumentPreview;
 
-        private final ObjectAnimator mExpandCircleAnimator;
-        private final ObjectAnimator mExpandLabelAnimator;
-        private final AnimatorSet mExpandAnimator;
+        private final ObjectAnimator mExpandPreviewAnimator;
 
-        private final ObjectAnimator mShrinkCircleAnimator;
-        private final ObjectAnimator mShrinkLabelAnimator;
-        private final AnimatorSet mShrinkAnimator;
+        private final ObjectAnimator mShrinkPreviewAnimator;
+
+        private String mInstrumentId;
 
         public InstrumentItem(Context context) {
             super(context);
             View.inflate(context, R.layout.instrument_picker_item, this);
 
-            mLabel = (TextView) findViewById(R.id.label);
-            mColor = (CircledImageView) findViewById(R.id.color);
+            mInstrumentPreview = (ImageView) findViewById(R.id.instrument_preview);
 
-            mExpandCircleRadius = mColor.getCircleRadius();
-            mShrinkCircleRadius = mExpandCircleRadius * SHRINK_CIRCLE_RATIO;
+            mShrinkPreviewAnimator = ObjectAnimator.ofFloat(mInstrumentPreview, "alpha",
+                    EXPAND_PREVIEW_ALPHA, SHRINK_PREVIEW_ALPHA).setDuration(ANIMATION_DURATION_MS);
 
-            mShrinkCircleAnimator = ObjectAnimator.ofFloat(mColor, "circleRadius",
-                    mExpandCircleRadius, mShrinkCircleRadius);
-            mShrinkLabelAnimator = ObjectAnimator.ofFloat(mLabel, "alpha",
-                    EXPAND_LABEL_ALPHA, SHRINK_LABEL_ALPHA);
-            mShrinkAnimator = new AnimatorSet().setDuration(ANIMATION_DURATION_MS);
-            mShrinkAnimator.playTogether(mShrinkCircleAnimator, mShrinkLabelAnimator);
-
-            mExpandCircleAnimator = ObjectAnimator.ofFloat(mColor, "circleRadius",
-                    mShrinkCircleRadius, mExpandCircleRadius);
-            mExpandLabelAnimator = ObjectAnimator.ofFloat(mLabel, "alpha",
-                    SHRINK_LABEL_ALPHA, EXPAND_LABEL_ALPHA);
-            mExpandAnimator = new AnimatorSet().setDuration(ANIMATION_DURATION_MS);
-            mExpandAnimator.playTogether(mExpandCircleAnimator, mExpandLabelAnimator);
+            mExpandPreviewAnimator = ObjectAnimator.ofFloat(mInstrumentPreview, "alpha",
+                    SHRINK_PREVIEW_ALPHA, EXPAND_PREVIEW_ALPHA).setDuration(ANIMATION_DURATION_MS);
         }
 
         @Override
         public void onCenterPosition(boolean animate) {
             if (animate) {
-                mShrinkAnimator.cancel();
-                if (!mExpandAnimator.isRunning()) {
-                    mExpandCircleAnimator.setFloatValues(mColor.getCircleRadius(), mExpandCircleRadius);
-                    mExpandLabelAnimator.setFloatValues(mLabel.getAlpha(), EXPAND_LABEL_ALPHA);
-                    mExpandAnimator.start();
+                mShrinkPreviewAnimator.cancel();
+                if (!mExpandPreviewAnimator.isRunning()) {
+                    mExpandPreviewAnimator.setFloatValues(mInstrumentPreview.getAlpha(), EXPAND_PREVIEW_ALPHA);
+                    mExpandPreviewAnimator.start();
                 }
             } else {
-                mExpandAnimator.cancel();
-                mColor.setCircleRadius(mExpandCircleRadius);
-                mLabel.setAlpha(EXPAND_LABEL_ALPHA);
+                mExpandPreviewAnimator.cancel();
+                mInstrumentPreview.setAlpha(EXPAND_PREVIEW_ALPHA);
             }
         }
 
         @Override
         public void onNonCenterPosition(boolean animate) {
             if (animate) {
-                mExpandAnimator.cancel();
-                if (!mShrinkAnimator.isRunning()) {
-                    mShrinkCircleAnimator.setFloatValues(mColor.getCircleRadius(), mShrinkCircleRadius);
-                    mShrinkLabelAnimator.setFloatValues(mLabel.getAlpha(), SHRINK_LABEL_ALPHA);
-                    mShrinkAnimator.start();
+                mExpandPreviewAnimator.cancel();
+                if (!mShrinkPreviewAnimator.isRunning()) {
+                    mShrinkPreviewAnimator.setFloatValues(mInstrumentPreview.getAlpha(), SHRINK_PREVIEW_ALPHA);
+                    mShrinkPreviewAnimator.start();
                 }
             } else {
-                mShrinkAnimator.cancel();
-                mColor.setCircleRadius(mShrinkCircleRadius);
-                mLabel.setAlpha(SHRINK_LABEL_ALPHA);
+                mShrinkPreviewAnimator.cancel();
+                mInstrumentPreview.setAlpha(SHRINK_PREVIEW_ALPHA);
             }
         }
 
-        private void setColor(String colorName) {
-            mLabel.setText(colorName);
-            mColor.setCircleColor(Color.parseColor("red"));//Color.parseColor(colorName));
+        private void setInstrumentId(String instrumentId) {
+            mInstrumentId = instrumentId;
+
+            try {
+                int resourceId = -1;
+                if ("ukulele".equals(instrumentId)) {
+                    resourceId = R.raw.uke_hour_hand;
+                } else if ("violin".equals(instrumentId)) {
+                    resourceId = R.raw.violin_hour_hand;
+                }
+                final SVG svg = SVG.getFromResource(getResources(), resourceId);
+                final float ar = svg.getDocumentAspectRatio();
+
+                final float bmpw = MAX_BMP_SIZE;
+                final float bmph = MAX_BMP_SIZE * ar;
+
+                // scaled svg - vertically placed, height = bitmap
+                final float ssvgh = bmph;
+                final float ssvgw = bmph * ar;
+
+                final Bitmap bmp = Bitmap.createBitmap((int)bmpw, (int)bmph,
+                        Bitmap.Config.ARGB_8888);
+                final float svgw = svg.getDocumentViewBox().width();
+                final float svgh = svg.getDocumentViewBox().height();
+                final float scale =  bmph / ssvgw;
+
+                final Canvas canvas = new Canvas(bmp);
+                canvas.save();
+                canvas.scale(scale, scale);
+                final PointF offset = new PointF((bmpw - ssvgw)/2, ssvgh);
+                canvas.translate(-offset.x, -offset.y);//225 160
+                canvas.rotate(90f, offset.x, offset.y);
+                svg.renderToCanvas(canvas);
+                canvas.restore();
+                mInstrumentPreview.setImageBitmap(bmp);
+            } catch (SVGParseException e) {
+                e.printStackTrace();
+            }
         }
 
-        private int getColor() {
-            return mColor.getDefaultCircleColor();
+        private String getInstrumentId() {
+            return mInstrumentId;
         }
     }
 
