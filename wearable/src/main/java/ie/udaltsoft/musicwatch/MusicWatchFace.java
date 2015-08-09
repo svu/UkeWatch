@@ -60,6 +60,9 @@ import java.util.concurrent.TimeUnit;
  * devices with low-bit ambient mode, the hands are drawn without anti-aliasing in ambient mode.
  */
 public class MusicWatchFace extends CanvasWatchFaceService {
+
+    private static final String TAG = "MusicWatchFaceConfig";
+
     /**
      * Update rate in milliseconds for interactive mode. We update once a second to advance the
      * second hand.
