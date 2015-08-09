@@ -3,6 +3,7 @@ package ie.udaltsoft.musicwatch;
 import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.PointF;
@@ -30,7 +31,6 @@ import com.google.android.gms.wearable.Wearable;
  */
 public class MusicWatchFaceConfigActivity extends Activity implements
         WearableListView.ClickListener, WearableListView.OnScrollListener {
-    private static final String TAG = "DigitalWatchFaceConfig";
 
     private GoogleApiClient mGoogleApiClient;
     private TextView mHeader;
@@ -66,29 +66,6 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         listView.setAdapter(new InstrumentListAdapter(instruments));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle connectionHint) {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) {
-                            Log.d(TAG, "onConnected: " + connectionHint);
-                        }
-                    }
-
-                    @Override
-                    public void onConnectionSuspended(int cause) {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) {
-                            Log.d(TAG, "onConnectionSuspended: " + cause);
-                        }
-                    }
-                })
-                .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(ConnectionResult result) {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) {
-                            Log.d(TAG, "onConnectionFailed: " + result);
-                        }
-                    }
-                })
                 .addApi(Wearable.API)
                 .build();
     }
@@ -243,33 +220,31 @@ public class MusicWatchFaceConfigActivity extends Activity implements
             mInstrumentId = instrumentId;
 
             try {
-                int resourceId = -1;
-                if ("ukulele".equals(instrumentId)) {
-                    resourceId = R.raw.uke_hour_hand;
-                } else if ("violin".equals(instrumentId)) {
-                    resourceId = R.raw.violin_hour_hand;
+                int svgResourceId = -1;
+                final Resources r = getResources();
+                if (r.getString(R.string.instrument_uke).equals(instrumentId)) {
+                    svgResourceId = R.raw.uke_hour_hand;
+                } else if (r.getString(R.string.instrument_violin).equals(instrumentId)) {
+                    svgResourceId = R.raw.violin_hour_hand;
                 }
-                final SVG svg = SVG.getFromResource(getResources(), resourceId);
+                final SVG svg = SVG.getFromResource(getResources(), svgResourceId);
                 final float ar = svg.getDocumentAspectRatio();
 
                 final float bmpw = MAX_BMP_SIZE;
                 final float bmph = MAX_BMP_SIZE * ar;
 
                 // scaled svg - vertically placed, height = bitmap
-                final float ssvgh = bmph;
                 final float ssvgw = bmph * ar;
 
-                final Bitmap bmp = Bitmap.createBitmap((int)bmpw, (int)bmph,
+                final Bitmap bmp = Bitmap.createBitmap((int) bmpw, (int) bmph,
                         Bitmap.Config.ARGB_8888);
-                final float svgw = svg.getDocumentViewBox().width();
-                final float svgh = svg.getDocumentViewBox().height();
                 final float scale =  bmph / ssvgw;
 
                 final Canvas canvas = new Canvas(bmp);
                 canvas.save();
                 canvas.scale(scale, scale);
-                final PointF offset = new PointF((bmpw - ssvgw)/2, ssvgh);
-                canvas.translate(-offset.x, -offset.y);//225 160
+                final PointF offset = new PointF((bmpw - ssvgw)/2, bmph);
+                canvas.translate(-offset.x, -offset.y);
                 canvas.rotate(90f, offset.x, offset.y);
                 svg.renderToCanvas(canvas);
                 canvas.restore();

@@ -33,12 +33,19 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
 
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.Wearable;
 
 import java.text.DateFormat;
 import java.text.NumberFormat;
@@ -64,7 +71,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         return new Engine();
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine {
+    private class Engine extends CanvasWatchFaceService.Engine implements DataApi.DataListener,
+    GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
         static final int MSG_UPDATE_TIME = 0;
 
         // Hands
@@ -102,6 +110,12 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 330 * Math.PI / 180
         };
 
+        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(MusicWatchFace.this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(Wearable.API)
+                .build();
+
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
         Paint mStaffPaint;
@@ -130,8 +144,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private RectF hourHandRect;
         private RectF minuteHandRect;
 
-        private DateFormat dateFormat = new SimpleDateFormat("EEE, MMM d");
-        private NumberFormat batteryFormat = NumberFormat.getPercentInstance();
+        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d");
+        private NumberFormat mBatteryFormat = NumberFormat.getPercentInstance();
 
 
         /**
@@ -246,6 +260,12 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
+            initFormats();
+        }
+
+        private void initFormats() {
+            mDateFormat = new SimpleDateFormat("EEE, MMM d");
+            mBatteryFormat = NumberFormat.getPercentInstance();
         }
 
         private void createUkeHands() throws SVGParseException {
@@ -419,7 +439,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void displayDate(Canvas canvas, Date d) {
-            final String dateFormatted = dateFormat.format(d);
+            final String dateFormatted = mDateFormat.format(d);
 
             final Rect bounds = new Rect();
             mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), bounds);
@@ -447,7 +467,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
-                    xmin + (xmax - xmin)*0.5f - noteBmp.getWidth()/2,
+                    xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2,
                     ynote, mStaffPaint);
 
             // TODO
@@ -464,12 +484,20 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
+                mGoogleApiClient.connect();
+
                 registerReceiver();
 
-                // Update time zone in case it changed while we weren't visible.
                 mTime.setTimeZone(TimeZone.getDefault());
+
+                initFormats();
             } else {
                 unregisterReceiver();
+
+                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                    Wearable.DataApi.removeListener(mGoogleApiClient, this);
+                    mGoogleApiClient.disconnect();
+                }
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -582,6 +610,74 @@ public class MusicWatchFace extends CanvasWatchFaceService {
          */
         private boolean shouldTimerBeRunning() {
             return isVisible() && !isInAmbientMode();
+        }
+
+        @Override
+        public void onConnected(Bundle connectionHint) {
+            Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
+            updateConfigDataItemAndUiOnStartup();
+        }
+
+        private void updateConfigDataItemAndUiOnStartup() {
+            MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient,
+                    new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
+                        @Override
+                        public void onConfigDataMapFetched(DataMap startupConfig) {
+                            // If the DataItem hasn't been created yet or some keys are missing,
+                            // use the default values.
+                            setDefaultValuesForMissingConfigKeys(startupConfig);
+                            MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, startupConfig);
+
+                            updateUiForConfigDataMap(startupConfig);
+                        }
+                    }
+            );
+        }
+
+        private void updateUiForConfigDataMap(DataMap config) {
+            boolean uiUpdated = false;
+            for (String configKey : config.keySet()) {
+                if (!config.containsKey(configKey)) {
+                    continue;
+                }
+                if (configKey.equals(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
+                    setInstrument(config.getString(configKey));
+                    uiUpdated = true;
+                }
+            }
+            if (uiUpdated) {
+                invalidate();
+            }
+
+        }
+
+        private void setInstrument(String instrument) {
+            try {
+                if (getResources().getString(R.string.instrument_uke).equals(instrument))
+                    createUkeHands();
+                else if (getResources().getString(R.string.instrument_violin).equals(instrument))
+                    createViolinHands();
+            } catch (SVGParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void setDefaultValuesForMissingConfigKeys(DataMap config) {
+            if (!config.containsKey(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
+                config.putString(MusicWatchFaceUtil.KEY_INSTRUMENT, MusicWatchFaceUtil.INSTRUMENT_DEFAULT);
+            }
+        }
+
+        @Override
+        public void onConnectionSuspended(int cause) {
+        }
+
+        @Override
+        public void onDataChanged(DataEventBuffer dataEventBuffer) {
+        }
+
+        @Override
+        public void onConnectionFailed(ConnectionResult connectionResult) {
         }
     }
 }
