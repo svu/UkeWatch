@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.BoxInsetLayout;
 import android.support.wearable.view.WearableListView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -25,12 +26,15 @@ import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Wearable config
  */
 public class MusicWatchFaceConfigActivity extends Activity implements
         WearableListView.ClickListener, WearableListView.OnScrollListener {
+
+    private static final String TAG = "MusicWatchFaceConfig";
 
     private GoogleApiClient mGoogleApiClient;
     private TextView mHeader;
@@ -69,12 +73,15 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                 .addApi(Wearable.API)
                 .build();
 
+
         MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
             @Override
             public void onConfigDataMapFetched(DataMap config) {
-                listView.scrollToPosition(Arrays.binarySearch(instruments,
+                final int newPos = Arrays.binarySearch(instruments,
                         config.getString(MusicWatchFaceUtil.KEY_INSTRUMENT,
-                                MusicWatchFaceUtil.INSTRUMENT_DEFAULT)));
+                                MusicWatchFaceUtil.INSTRUMENT_DEFAULT));
+                if (newPos != -1)
+                    listView.scrollToPosition(newPos);
             }
         });
     }
