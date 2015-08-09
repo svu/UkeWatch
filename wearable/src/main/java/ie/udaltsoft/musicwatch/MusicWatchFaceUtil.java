@@ -38,7 +38,7 @@ public final class MusicWatchFaceUtil {
 
     public static final String PATH_WITH_FEATURE = "/music_face_config";
 
-    public static final String INSTRUMENT_DEFAULT = "Uke";
+    public static final String INSTRUMENT_DEFAULT = "ukulele";
 
     public interface FetchConfigDataMapCallback {
 
