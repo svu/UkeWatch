@@ -11,7 +11,6 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.BoxInsetLayout;
 import android.support.wearable.view.WearableListView;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowInsets;
@@ -21,10 +20,11 @@ import android.widget.TextView;
 
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
-import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
+
+import java.util.Arrays;
 
 /**
  * Wearable config
@@ -41,7 +41,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         setContentView(R.layout.music_watch_config);
 
         mHeader = (TextView) findViewById(R.id.header);
-        WearableListView listView = (WearableListView) findViewById(R.id.instrument_picker);
+        final WearableListView listView = (WearableListView) findViewById(R.id.instrument_picker);
         BoxInsetLayout content = (BoxInsetLayout) findViewById(R.id.content);
         // BoxInsetLayout adds padding by default on round devices. Add some on square devices.
         content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
@@ -62,12 +62,21 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         listView.setClickListener(this);
         listView.addOnScrollListener(this);
 
-        String[] instruments = getResources().getStringArray(R.array.instruments_array);
+        final String[] instruments = getResources().getStringArray(R.array.instruments_array);
         listView.setAdapter(new InstrumentListAdapter(instruments));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
+
+        MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
+            @Override
+            public void onConfigDataMapFetched(DataMap config) {
+                listView.scrollToPosition(Arrays.binarySearch(instruments,
+                        config.getString(MusicWatchFaceUtil.KEY_INSTRUMENT,
+                                MusicWatchFaceUtil.INSTRUMENT_DEFAULT)));
+            }
+        });
     }
 
     @Override
