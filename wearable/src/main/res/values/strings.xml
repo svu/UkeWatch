@@ -4,7 +4,9 @@
     <string name="music_config_name">Music watch face configuration</string>
     <string name="music_instrument">Instrument</string>
 
-    <string name="instrument_uke">ukulele</string>
+    <string name="date_format">EEE, MMM d</string>
+
+    <string name="instrument_uke">uke</string>
     <string name="instrument_violin">violin</string>
 
     <string-array name="instruments_array">

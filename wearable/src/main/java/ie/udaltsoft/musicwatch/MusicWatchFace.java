@@ -85,15 +85,15 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         static final float NAIL_RATIO = 0.7f;
 
         // 12 o'clock size
-        static final float MARK12_RATIO = 0.4f;
+        static final float MARK12_RATIO = 0.35f;
         // 3, 6, 9 o'clock mark size
-        static final float MARK_RATIO = 0.2f;
+        static final float MARK_RATIO = 0.18f;
         // offset of marks from the border
         static final float MARK_OFFSET_RATIO = 0.1f;
         // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
         static final float MARK_HOUR_RATIO = 0.04f;
 
-        static final float STAFF_X_RATIO_START = 0.2f;
+        static final float STAFF_X_RATIO_START = 0.35f;
         static final float STAFF_X_RATIO_END = 0.55f;
 
         static final float STAFF_Y_RATIO_START = 0.45f;
@@ -102,7 +102,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         // battery note size
         static final float MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
 
-        final double HOUR_ANGELS[] = new double[] {
+        final double HOUR_ANGLES[] = new double[] {
                 30 * Math.PI / 180,
                 60 * Math.PI / 180,
                 120 * Math.PI / 180,
@@ -220,13 +220,16 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
+            batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+
             setWatchFaceStyle(new WatchFaceStyle.Builder(MusicWatchFace.this)
                     .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
                     .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
                     .setShowSystemUiTime(false)
                     .build());
 
-            Resources resources = MusicWatchFace.this.getResources();
+            final Resources resources = MusicWatchFace.this.getResources();
 
             mBackgroundPaintAmbient = new Paint();
             mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background_ambient));
@@ -250,7 +253,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             mTime = new GregorianCalendar();
 
             try {
-                createViolinHands();
+                createHands(MusicWatchFaceUtil.INSTRUMENT_DEFAULT);
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
@@ -267,22 +270,20 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void initFormats() {
-            mDateFormat = new SimpleDateFormat("EEE, MMM d");
+            mDateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format));
             mBatteryFormat = NumberFormat.getPercentInstance();
         }
 
-        private void createUkeHands() throws SVGParseException {
-            hourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_hour_hand);
-            minuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_minute_hand);
-            ambientHourHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
-            ambientMinuteHandSvg = SVG.getFromResource(getResources(), R.raw.uke_ambient_hand);
+        private SVG createHand(String instrument, String handType) throws SVGParseException {
+            int id = getResources().getIdentifier(instrument + "_" + handType + "_hand", "raw", getPackageName());
+            return id == 0 ? null : SVG.getFromResource(getResources(), id);
         }
 
-        private void createViolinHands() throws SVGParseException {
-            hourHandSvg = SVG.getFromResource(getResources(), R.raw.violin_hour_hand);
-            minuteHandSvg = SVG.getFromResource(getResources(), R.raw.violin_minute_hand);
-            ambientHourHandSvg = SVG.getFromResource(getResources(), R.raw.violin_ambient_hour_hand);
-            ambientMinuteHandSvg = SVG.getFromResource(getResources(), R.raw.violin_ambient_minute_hand);
+        private void createHands(String instrument) throws SVGParseException {
+            hourHandSvg = createHand(instrument, "hour");
+            minuteHandSvg = createHand(instrument, "minute");
+            ambientHourHandSvg = createHand(instrument, "ambient_hour");
+            ambientMinuteHandSvg = createHand(instrument, "ambient_minute");
         }
 
         @Override
@@ -434,6 +435,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                                 PointF rotationPoint,
                                 SVG svg)
         {
+            if (svg == null)
+                return;
             final PointF p = new PointF(center.x - rotationPoint.x,
                                       center.y - rotationPoint.y);
             canvas.translate(p.x, p.y);
@@ -513,10 +516,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 return;
             }
             mRegisteredTimeZoneReceiver = true;
-            tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
             MusicWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
 
-            batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
             MusicWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
         }
 
@@ -587,9 +588,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
             final float offset = 1 - hourRatio - MARK_OFFSET_RATIO;
             final PointF halfSize = new PointF(bitmap.getWidth()/2f, bitmap.getHeight()/2f);
-            for (int i=0; i<HOUR_ANGELS.length; i++) {
-                markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGELS[i]) * offset) - halfSize.x,
-                        center.y * (float) (1 - Math.cos(HOUR_ANGELS[i]) * offset) - halfSize.y);
+            for (int i=0; i< HOUR_ANGLES.length; i++) {
+                markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGLES[i]) * offset) - halfSize.x,
+                        center.y * (float) (1 - Math.cos(HOUR_ANGLES[i]) * offset) - halfSize.y);
             }
         }
 
@@ -656,10 +657,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private void setInstrument(String instrument) {
             try {
-                if (getResources().getString(R.string.instrument_uke).equals(instrument))
-                    createUkeHands();
-                else if (getResources().getString(R.string.instrument_violin).equals(instrument))
-                    createViolinHands();
+                createHands(instrument);
             } catch (SVGParseException e) {
                 e.printStackTrace();
             }

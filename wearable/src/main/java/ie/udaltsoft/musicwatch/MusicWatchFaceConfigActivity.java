@@ -80,7 +80,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                 final int newPos = Arrays.binarySearch(instruments,
                         config.getString(MusicWatchFaceUtil.KEY_INSTRUMENT,
                                 MusicWatchFaceUtil.INSTRUMENT_DEFAULT));
-                if (newPos != -1)
+                if (newPos > 0)
                     listView.scrollToPosition(newPos);
             }
         });
