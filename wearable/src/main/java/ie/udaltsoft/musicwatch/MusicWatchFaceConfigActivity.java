@@ -262,14 +262,11 @@ public class MusicWatchFaceConfigActivity extends Activity implements
             mInstrumentId = instrumentId;
 
             try {
-                int svgResourceId = -1;
                 final Resources r = getResources();
-                if (r.getString(R.string.instrument_uke).equals(instrumentId)) {
-                    svgResourceId = R.raw.uke_hour_hand;
-                } else if (r.getString(R.string.instrument_violin).equals(instrumentId)) {
-                    svgResourceId = R.raw.violin_hour_hand;
-                }
-                final SVG svg = SVG.getFromResource(getResources(), svgResourceId);
+
+                final int svgResourceId = r.getIdentifier(instrumentId + "_hour_hand", "raw", getContext().getPackageName());
+
+                final SVG svg = SVG.getFromResource(r, svgResourceId);
                 final float ar = svg.getDocumentAspectRatio();
 
                 final float bmpw = MAX_BMP_SIZE;

@@ -8,10 +8,14 @@
 
     <string name="instrument_uke">uke</string>
     <string name="instrument_violin">violin</string>
+    <string name="instrument_guitar">guitar</string>
+    <string name="instrument_woodwind">woodwind</string>
 
     <string-array name="instruments_array">
         <item>@string/instrument_uke</item>
         <item>@string/instrument_violin</item>
+        <item>@string/instrument_guitar</item>
+        <item>@string/instrument_woodwind</item>
     </string-array>
 
 </resources>
