@@ -89,7 +89,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         static final int MSG_UPDATE_TIME = 0;
 
         // Hands
-        static final float HOUR_HAND_RATIO = 0.95f;
+        static final float HOUR_HAND_RATIO = 0.90f;
         static final float MINUTE_HAND_RATIO = 1.15f;
         // Where is the nail on the hands?
         static final float NAIL_RATIO = 0.7f;
