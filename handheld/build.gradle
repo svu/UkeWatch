@@ -8,8 +8,8 @@ android {
         applicationId "ie.udaltsoft.musicwatch"
         minSdkVersion 21
         targetSdkVersion 21
-        versionCode 11
-        versionName "1.1"
+        versionCode 12
+        versionName "1.2"
     }
     buildTypes {
         release {
