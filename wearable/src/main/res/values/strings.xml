@@ -14,7 +14,7 @@
     <string-array name="instruments_array">
         <item>@string/instrument_uke</item>
         <item>@string/instrument_violin</item>
-        <!-- <item>@string/instrument_guitar</item> -->
+        <item>@string/instrument_guitar</item>
         <item>@string/instrument_woodwind</item>
     </string-array>
 
