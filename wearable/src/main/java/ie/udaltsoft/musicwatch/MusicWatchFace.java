@@ -485,14 +485,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             canvas.drawBitmap(noteBmp,
                     xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2,
                     ynote, mStaffPaint);
-
-            // TODO
-            /*final int phoneBatteryNoteLevel = 2;
-            ynote = ymax - ystep * (phoneBatteryNoteLevel / 2f);
-            canvas.drawBitmap(noteBmp,
-                    xmin + (xmax - xmin)*0.75f - noteBmp.getWidth()/2,
-                    ynote, mStaffPaint);*/
-
         }
 
         @Override
