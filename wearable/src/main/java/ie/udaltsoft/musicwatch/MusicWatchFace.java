@@ -53,8 +53,11 @@ import com.caverock.androidsvg.SVGParseException;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
+import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
 
 import java.text.DateFormat;
@@ -71,7 +74,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class MusicWatchFace extends CanvasWatchFaceService {
 
-    private static final String TAG = "MusicWatchFaceConfig";
+    private static final String TAG = "MusicWatchFace";
 
     /**
      * Update rate in milliseconds for interactive mode. We update once a second to advance the
@@ -84,8 +87,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         return new Engine();
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine implements DataApi.DataListener,
-    GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+    private class Engine extends CanvasWatchFaceService.Engine
+            implements GoogleApiClient.ConnectionCallbacks,
+            GoogleApiClient.OnConnectionFailedListener,
+            DataApi.DataListener {
         static final int MSG_UPDATE_TIME = 0;
 
         // Hands
@@ -112,7 +117,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         // battery note size
         static final float MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
 
-        final double HOUR_ANGLES[] = new double[] {
+        final double HOUR_ANGLES[] = new double[]{
                 30 * Math.PI / 180,
                 60 * Math.PI / 180,
                 120 * Math.PI / 180,
@@ -123,11 +128,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 330 * Math.PI / 180
         };
 
-        GoogleApiClient mGoogleApiClient = new GoogleApiClient.Builder(MusicWatchFace.this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(Wearable.API)
-                .build();
+        private GoogleApiClient mGoogleApiClient;
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
@@ -159,7 +160,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d");
         private NumberFormat mBatteryFormat = NumberFormat.getPercentInstance();
-
 
         /**
          * Handler to update the time once a second in interactive mode.
@@ -193,13 +193,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             @Override
             public void onReceive(Context context, Intent intent) {
                 final Intent batteryStatus = MusicWatchFace.this.registerReceiver(null, batFilter);
-                try {
-                    final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                    final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                    batteryPct = level / (float)scale;
-                } catch (NullPointerException ex) {
-                    batteryPct = 0f;
-                }
+
+                final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                batteryPct = (scale == 0) ? 0 : level / (float) scale;
             }
         };
 
@@ -225,11 +222,21 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private IntentFilter batFilter;
         private IntentFilter tzFilter;
+        private String mInstrument;
+
+        private Engine() {
+            mGoogleApiClient = new GoogleApiClient.Builder(MusicWatchFace.this)
+                    .addConnectionCallbacks(this)
+                    .addOnConnectionFailedListener(this)
+                    .addApi(Wearable.API)
+                    .build();
+        }
 
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            mInstrument = MusicWatchFaceUtil.INSTRUMENT_DEFAULT;
             tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
             batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 
@@ -263,7 +270,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             mTime = new GregorianCalendar();
 
             try {
-                createHands(MusicWatchFaceUtil.INSTRUMENT_DEFAULT);
+                createHands();
 
                 threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
                 sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
@@ -284,16 +291,16 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             mBatteryFormat = NumberFormat.getPercentInstance();
         }
 
-        private SVG createHand(String instrument, String handType) throws SVGParseException {
-            int id = getResources().getIdentifier(instrument + "_" + handType + "_hand", "raw", getPackageName());
+        private SVG createHand(String handType) throws SVGParseException {
+            int id = getResources().getIdentifier(mInstrument + "_" + handType + "_hand", "raw", getPackageName());
             return id == 0 ? null : SVG.getFromResource(getResources(), id);
         }
 
-        private void createHands(String instrument) throws SVGParseException {
-            hourHandSvg = createHand(instrument, "hour");
-            minuteHandSvg = createHand(instrument, "minute");
-            ambientHourHandSvg = createHand(instrument, "ambient_hour");
-            ambientMinuteHandSvg = createHand(instrument, "ambient_minute");
+        private void createHands() throws SVGParseException {
+            hourHandSvg = createHand("hour");
+            minuteHandSvg = createHand("minute");
+            ambientHourHandSvg = createHand("ambient_hour");
+            ambientMinuteHandSvg = createHand("ambient_minute");
         }
 
         @Override
@@ -443,12 +450,11 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                                 float handScale,
                                 RectF rect,
                                 PointF rotationPoint,
-                                SVG svg)
-        {
+                                SVG svg) {
             if (svg == null)
                 return;
             final PointF p = new PointF(center.x - rotationPoint.x,
-                                      center.y - rotationPoint.y);
+                    center.y - rotationPoint.y);
             canvas.translate(p.x, p.y);
             canvas.rotate(angle, rotationPoint.x, rotationPoint.y);
             svg.renderToCanvas(canvas, rect);
@@ -472,7 +478,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             final float ymax = center.y * STAFF_Y_RATIO_END;
             float ycur = ymin;
             final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
-            for (int i = 0;i<5;i++) {
+            for (int i = 0; i < 5; i++) {
                 canvas.drawLine(xmin,
                         ycur,
                         xmax,
@@ -480,7 +486,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                         mStaffPaint);
                 ycur += ystep;
             }
-            final int watchBatteryNoteLevel = (int)Math.floor(this.batteryPct * 10);
+            final int watchBatteryNoteLevel = (int) Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
                     xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2,
@@ -491,39 +497,44 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         public void onVisibilityChanged(boolean visible) {
             super.onVisibilityChanged(visible);
 
+            Log.d(TAG, "*** VISIBILITY SET to " + visible + ": processing ***");
+
             if (visible) {
                 mGoogleApiClient.connect();
 
-                registerReceiver();
+                registerReceivers();
 
                 mTime.setTimeZone(TimeZone.getDefault());
 
                 initFormats();
             } else {
-                unregisterReceiver();
+                unregisterReceivers();
 
                 if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+                    Log.d(TAG, "*** Removing Google API listener ***");
                     Wearable.DataApi.removeListener(mGoogleApiClient, this);
                     mGoogleApiClient.disconnect();
+                } else {
+                    Log.d(TAG, "*** Hiding the face, but the client is already disconnected ***");
                 }
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
             updateTimer();
+            Log.d(TAG, "*** VISIBILITY SET to " + visible + ": done ***");
         }
 
-        private void registerReceiver() {
+        private void registerReceivers() {
             if (mRegisteredTimeZoneReceiver) {
                 return;
             }
             mRegisteredTimeZoneReceiver = true;
             MusicWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
-
             MusicWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
         }
 
-        private void unregisterReceiver() {
+        private void unregisterReceivers() {
             if (!mRegisteredTimeZoneReceiver) {
                 return;
             }
@@ -546,7 +557,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         @Override
         public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
             super.onSurfaceChanged(holder, format, width, height);
-            center = new PointF (width / 2f, height / 2f);
+            center = new PointF(width / 2f, height / 2f);
 
             secLength = center.x - 20;
 
@@ -556,12 +567,12 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     center.y * MINUTE_HAND_RATIO * NAIL_RATIO);
 
             hourHandRect = new RectF(0, 0,
-                                     center.x * HOUR_HAND_RATIO,
-                                     center.y * HOUR_HAND_RATIO);
+                    center.x * HOUR_HAND_RATIO,
+                    center.y * HOUR_HAND_RATIO);
 
             minuteHandRect = new RectF(0, 0,
-                                       center.x * MINUTE_HAND_RATIO,
-                                       center.y * MINUTE_HAND_RATIO);
+                    center.x * MINUTE_HAND_RATIO,
+                    center.y * MINUTE_HAND_RATIO);
 
             markBounds = new PointF(MARK_RATIO * center.x, MARK_RATIO * center.y);
             mark12Bounds = new PointF(MARK12_RATIO * center.x, MARK12_RATIO * center.y);
@@ -589,8 +600,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             markHourLocations = new PointF[8];
             final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
             final float offset = 1 - hourRatio - MARK_OFFSET_RATIO;
-            final PointF halfSize = new PointF(bitmap.getWidth()/2f, bitmap.getHeight()/2f);
-            for (int i=0; i< HOUR_ANGLES.length; i++) {
+            final PointF halfSize = new PointF(bitmap.getWidth() / 2f, bitmap.getHeight() / 2f);
+            for (int i = 0; i < HOUR_ANGLES.length; i++) {
                 markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGLES[i]) * offset) - halfSize.x,
                         center.y * (float) (1 - Math.cos(HOUR_ANGLES[i]) * offset) - halfSize.y);
             }
@@ -618,12 +629,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             return isVisible() && !isInAmbientMode();
         }
 
-        @Override
-        public void onConnected(Bundle connectionHint) {
-            Wearable.DataApi.addListener(mGoogleApiClient, Engine.this);
-            updateConfigDataItemAndUiOnStartup();
-        }
-
         private void updateConfigDataItemAndUiOnStartup() {
             MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient,
                     new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
@@ -631,8 +636,14 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                         public void onConfigDataMapFetched(DataMap startupConfig) {
                             // If the DataItem hasn't been created yet or some keys are missing,
                             // use the default values.
-                            setDefaultValuesForMissingConfigKeys(startupConfig);
-                            MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, startupConfig);
+                            final String initialInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_INSTRUMENT);
+                            Log.d(TAG, ">> Fetched startup config: " + initialInstrument);
+                            MusicWatchFaceUtil.setDefaultValuesForMissingConfigKeys(startupConfig);
+                            if (initialInstrument == null) {
+                                Log.d(TAG, "Completing config initialization with: " +
+                                        startupConfig.getString(MusicWatchFaceUtil.KEY_INSTRUMENT));
+                                MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, startupConfig);
+                            }
 
                             updateUiForConfigDataMap(startupConfig);
                         }
@@ -641,34 +652,60 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void updateUiForConfigDataMap(DataMap config) {
-            boolean uiUpdated = false;
-            for (String configKey : config.keySet()) {
-                if (!config.containsKey(configKey)) {
-                    continue;
+            if (config.containsKey(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
+                final String instrument = config.get(MusicWatchFaceUtil.KEY_INSTRUMENT);
+                if (mInstrument == null || !mInstrument.equals(instrument)) {
+                    setInstrument(instrument);
+                    Log.d(TAG, "-- INVALIDATING AFTER NEW INSTRUMENT: " + instrument);
+                    invalidate();
+                } else {
+                    Log.d(TAG, "-- Same instrument, no change in config");
                 }
-                if (configKey.equals(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
-                    setInstrument(config.getString(configKey));
-                    uiUpdated = true;
-                }
+            } else {
+                Log.d(TAG, "STRANGE, UPDATE BUT NOT INSTRUMENT??");
             }
-            if (uiUpdated) {
-                invalidate();
-            }
-
         }
 
         private void setInstrument(String instrument) {
             try {
-                createHands(instrument);
+                if (mInstrument == null || !mInstrument.equals(instrument)) {
+                    mInstrument = instrument;
+                    Log.i(TAG, "!!! Hands to be created for " + instrument);
+                    createHands();
+                }
             } catch (SVGParseException e) {
                 e.printStackTrace();
             }
         }
 
-        private void setDefaultValuesForMissingConfigKeys(DataMap config) {
-            if (!config.containsKey(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
-                config.putString(MusicWatchFaceUtil.KEY_INSTRUMENT, MusicWatchFaceUtil.INSTRUMENT_DEFAULT);
+        @Override
+        public void onDataChanged(DataEventBuffer dataEvents) {
+            Log.d(TAG, "-- Data changed --");
+            for (DataEvent dataEvent : dataEvents) {
+                if (dataEvent.getType() != DataEvent.TYPE_CHANGED) {
+                    continue;
+                }
+
+                DataItem dataItem = dataEvent.getDataItem();
+                if (!dataItem.getUri().getPath().equals(
+                        MusicWatchFaceUtil.PATH_WITH_FEATURE)) {
+                    continue;
+                }
+
+                DataMapItem dataMapItem = DataMapItem.fromDataItem(dataItem);
+                DataMap config = dataMapItem.getDataMap();
+                if (Log.isLoggable(TAG, Log.DEBUG)) {
+                    Log.d(TAG, "Config DataItem updated:" + config);
+                }
+                updateUiForConfigDataMap(config);
             }
+        }
+
+        @Override
+        public void onConnected(Bundle connectionHint) {
+            Log.d(TAG, "*** CONNECTED, adding Google API listener *** ");
+            Wearable.DataApi.addListener(mGoogleApiClient, this);
+            updateConfigDataItemAndUiOnStartup();
         }
 
         @Override
@@ -676,11 +713,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         @Override
-        public void onDataChanged(DataEventBuffer dataEventBuffer) {
-        }
-
-        @Override
         public void onConnectionFailed(ConnectionResult connectionResult) {
+
         }
     }
 }

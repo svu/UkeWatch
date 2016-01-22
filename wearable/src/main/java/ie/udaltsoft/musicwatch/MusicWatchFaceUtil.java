@@ -76,31 +76,40 @@ public final class MusicWatchFaceUtil {
 
     public static void overwriteKeysInConfigDataMap(final GoogleApiClient googleApiClient,
             final DataMap configKeysToOverwrite) {
-
-        MusicWatchFaceUtil.fetchConfigDataMap(googleApiClient,
+/*
+        fetchConfigDataMap(googleApiClient,
                 new FetchConfigDataMapCallback() {
                     @Override
                     public void onConfigDataMapFetched(DataMap currentConfig) {
                         DataMap overwrittenConfig = new DataMap();
                         overwrittenConfig.putAll(currentConfig);
                         overwrittenConfig.putAll(configKeysToOverwrite);
-                        MusicWatchFaceUtil.putConfigDataItem(googleApiClient, overwrittenConfig);
+                        Log.i(TAG, "Instrument just overwritten from UI: " + overwrittenConfig.getString(KEY_INSTRUMENT));
+                        putConfigDataItem(googleApiClient, overwrittenConfig);
                     }
                 }
-        );
+        );*/
+        Log.i(TAG, "Instrument just overwritten from UI: " + configKeysToOverwrite.getString(KEY_INSTRUMENT));
+        MusicWatchFaceUtil.putConfigDataItem(googleApiClient, configKeysToOverwrite);
     }
+
+    public static void setDefaultValuesForMissingConfigKeys(DataMap config) {
+        if (!config.containsKey(KEY_INSTRUMENT)) {
+            config.putString(KEY_INSTRUMENT, INSTRUMENT_DEFAULT);
+        }
+    }
+
 
     public static void putConfigDataItem(GoogleApiClient googleApiClient, DataMap newConfig) {
         PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE);
         DataMap configToPut = putDataMapRequest.getDataMap();
         configToPut.putAll(newConfig);
+        Log.i(TAG, "!!! Instrument to be put as data item: " + configToPut.getString(KEY_INSTRUMENT));
         Wearable.DataApi.putDataItem(googleApiClient, putDataMapRequest.asPutDataRequest())
                 .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                     @Override
                     public void onResult(DataApi.DataItemResult dataItemResult) {
-                        if (Log.isLoggable(TAG, Log.DEBUG)) {
-                            Log.d(TAG, "putDataItem result status: " + dataItemResult.getStatus());
-                        }
+                        Log.d(TAG, "== putDataItem result status: " + dataItemResult.getStatus());
                     }
                 });
     }
