@@ -42,13 +42,17 @@ import com.google.android.gms.wearable.Wearable;
 
 public final class MusicWatchFaceUtil {
 
+    public enum HandKind {HOUR, MINUTE}
+
     public static final String TAG = "MusicWatchFaceUtil";
 
-    public static final String KEY_INSTRUMENT = "INSTRUMENT";
+    public static final String KEY_HOUR_INSTRUMENT = "HOUR_INSTRUMENT";
+    public static final String KEY_MINUTE_INSTRUMENT = "MINUTE_INSTRUMENT";
 
     public static final String PATH_WITH_FEATURE = "/music_face_config";
 
-    public static final String INSTRUMENT_DEFAULT = "uke";
+    public static final String HOUR_INSTRUMENT_DEFAULT = "wood_uke";
+    public static final String MINUTE_INSTRUMENT_DEFAULT = "pink_uke";
 
     public interface FetchConfigDataMapCallback {
 
@@ -56,7 +60,7 @@ public final class MusicWatchFaceUtil {
     }
 
     public static void fetchConfigDataMap(final GoogleApiClient client,
-            final FetchConfigDataMapCallback callback) {
+                                          final FetchConfigDataMapCallback callback) {
         Wearable.NodeApi.getLocalNode(client).setResultCallback(
                 new ResultCallback<NodeApi.GetLocalNodeResult>() {
                     @Override
@@ -75,27 +79,20 @@ public final class MusicWatchFaceUtil {
     }
 
     public static void overwriteKeysInConfigDataMap(final GoogleApiClient googleApiClient,
-            final DataMap configKeysToOverwrite) {
-/*
-        fetchConfigDataMap(googleApiClient,
-                new FetchConfigDataMapCallback() {
-                    @Override
-                    public void onConfigDataMapFetched(DataMap currentConfig) {
-                        DataMap overwrittenConfig = new DataMap();
-                        overwrittenConfig.putAll(currentConfig);
-                        overwrittenConfig.putAll(configKeysToOverwrite);
-                        Log.i(TAG, "Instrument just overwritten from UI: " + overwrittenConfig.getString(KEY_INSTRUMENT));
-                        putConfigDataItem(googleApiClient, overwrittenConfig);
-                    }
-                }
-        );*/
-        Log.i(TAG, "Instrument just overwritten from UI: " + configKeysToOverwrite.getString(KEY_INSTRUMENT));
+                                                    final DataMap configKeysToOverwrite) {
+        Log.i(TAG, "Instrument just overwritten from UI: " +
+                configKeysToOverwrite.getString(KEY_HOUR_INSTRUMENT) +
+                "/" +
+                configKeysToOverwrite.getString(KEY_MINUTE_INSTRUMENT));
         MusicWatchFaceUtil.putConfigDataItem(googleApiClient, configKeysToOverwrite);
     }
 
     public static void setDefaultValuesForMissingConfigKeys(DataMap config) {
-        if (!config.containsKey(KEY_INSTRUMENT)) {
-            config.putString(KEY_INSTRUMENT, INSTRUMENT_DEFAULT);
+        if (!config.containsKey(KEY_HOUR_INSTRUMENT)) {
+            config.putString(KEY_HOUR_INSTRUMENT, HOUR_INSTRUMENT_DEFAULT);
+        }
+        if (!config.containsKey(KEY_MINUTE_INSTRUMENT)) {
+            config.putString(KEY_MINUTE_INSTRUMENT, MINUTE_INSTRUMENT_DEFAULT);
         }
     }
 
@@ -104,7 +101,10 @@ public final class MusicWatchFaceUtil {
         PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE);
         DataMap configToPut = putDataMapRequest.getDataMap();
         configToPut.putAll(newConfig);
-        Log.i(TAG, "!!! Instrument to be put as data item: " + configToPut.getString(KEY_INSTRUMENT));
+        Log.i(TAG, "!!! Instruments to be put as data item: " +
+                configToPut.getString(KEY_HOUR_INSTRUMENT) +
+                "/" +
+                configToPut.getString(MINUTE_INSTRUMENT_DEFAULT));
         Wearable.DataApi.putDataItem(googleApiClient, putDataMapRequest.asPutDataRequest())
                 .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                     @Override
@@ -137,5 +137,6 @@ public final class MusicWatchFaceUtil {
         }
     }
 
-    private MusicWatchFaceUtil() { }
+    private MusicWatchFaceUtil() {
+    }
 }

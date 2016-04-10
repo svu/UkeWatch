@@ -39,6 +39,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.Wearable;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Wearable config
  */
@@ -47,6 +50,9 @@ public class MusicWatchFaceConfigActivity extends Activity implements View.OnCli
     private static final String TAG = "MusicWatchFaceCfgActvty";
 
     private GoogleApiClient mGoogleApiClient;
+    private List<String> mHourInstruments;
+    private List<String> mMinuteInstruments;
+    private List<String> mPairedInstruments;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,19 +62,23 @@ public class MusicWatchFaceConfigActivity extends Activity implements View.OnCli
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API)
                 .build();
+
+        mHourInstruments = Arrays.asList(getResources().getStringArray(R.array.hour_instruments_array));
+        mMinuteInstruments = Arrays.asList(getResources().getStringArray(R.array.minute_instruments_array));
+        mPairedInstruments = Arrays.asList(getResources().getStringArray(R.array.instruments_pairs_array));
     }
 
-    private ImageButton getButtonForInstrument(String instrument) {
-        final int id = getResources().getIdentifier(instrument + "_btn", "id", getPackageName());
+    private ImageButton getButtonForInstrumentPair(String instrumentPair) {
+        final int id = getResources().getIdentifier(instrumentPair + "_btn", "id", getPackageName());
         return (ImageButton) findViewById(id);
     }
 
     private void configureClickListeners() {
-        final String[] instruments = getResources().getStringArray(R.array.instruments_array);
-        for (final String instrument : instruments) {
-            final ImageButton btn = this.getButtonForInstrument(instrument);
+        int idx = 0;
+        for (final String instrumentPair : mPairedInstruments) {
+            final ImageButton btn = this.getButtonForInstrumentPair(instrumentPair);
             if (btn != null) {
-                btn.setTag(instrument);
+                btn.setTag(idx++);
                 btn.setOnClickListener(this);
             }
         }
@@ -78,9 +88,10 @@ public class MusicWatchFaceConfigActivity extends Activity implements View.OnCli
         MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
             @Override
             public void onConfigDataMapFetched(DataMap config) {
-                final String selectedInstrument = config.getString(MusicWatchFaceUtil.KEY_INSTRUMENT,
-                        MusicWatchFaceUtil.INSTRUMENT_DEFAULT);
-                final ImageButton btn = getButtonForInstrument(selectedInstrument);
+                final String selectedHourInstrument = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                        MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                final int idx = mHourInstruments.indexOf(selectedHourInstrument);
+                final ImageButton btn = getButtonForInstrumentPair(mPairedInstruments.get(idx));
                 btn.setPressed(true);
 
                 // Unfortunately findViewById does not work earlier...
@@ -104,18 +115,20 @@ public class MusicWatchFaceConfigActivity extends Activity implements View.OnCli
         super.onStop();
     }
 
-    private void updateConfigDataItem(final String instument) {
+    private void updateConfigDataItem(final int instrumentPairIdx) {
         DataMap configKeysToOverwrite = new DataMap();
-        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_INSTRUMENT,
-                instument);
+        final String hourInstrument = mHourInstruments.get(instrumentPairIdx);
+        final String minuteInstrument = mMinuteInstruments.get(instrumentPairIdx);
+        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hourInstrument);
+        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, minuteInstrument);
         MusicWatchFaceUtil.overwriteKeysInConfigDataMap(mGoogleApiClient, configKeysToOverwrite);
     }
 
     @Override
     public void onClick(View v) {
-        final String instrument = (String)v.getTag();
-        Log.i(TAG, "Selected instrument: " + instrument);
-        updateConfigDataItem(instrument);
+        final int instrumentPairIdx = (Integer) v.getTag();
+        Log.i(TAG, "Selected instrument pair: " + instrumentPairIdx);
+        updateConfigDataItem(instrumentPairIdx);
         finish();
     }
 }

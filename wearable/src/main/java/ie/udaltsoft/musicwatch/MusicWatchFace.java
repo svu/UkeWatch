@@ -26,6 +26,7 @@
 
 package ie.udaltsoft.musicwatch;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -65,6 +66,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -158,12 +160,13 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private RectF hourHandRect;
         private RectF minuteHandRect;
 
-        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d");
+        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
         private NumberFormat mBatteryFormat = NumberFormat.getPercentInstance();
 
         /**
          * Handler to update the time once a second in interactive mode.
          */
+        @SuppressLint("HandlerLeak")
         final Handler mUpdateTimeHandler = new Handler() {
             @Override
             public void handleMessage(Message message) {
@@ -194,9 +197,11 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             public void onReceive(Context context, Intent intent) {
                 final Intent batteryStatus = MusicWatchFace.this.registerReceiver(null, batFilter);
 
-                final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                batteryPct = (scale == 0) ? 0 : level / (float) scale;
+                if (batteryStatus != null) {
+                    final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+                    final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+                    batteryPct = (scale == 0) ? 0 : level / (float) scale;
+                }
             }
         };
 
@@ -222,7 +227,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private IntentFilter batFilter;
         private IntentFilter tzFilter;
-        private String mInstrument;
+        private String mHourInstrument;
+        private String mMinuteInstrument;
 
         private Engine() {
             mGoogleApiClient = new GoogleApiClient.Builder(MusicWatchFace.this)
@@ -236,7 +242,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
-            mInstrument = MusicWatchFaceUtil.INSTRUMENT_DEFAULT;
+            mHourInstrument = MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT;
+            mMinuteInstrument = MusicWatchFaceUtil.MINUTE_INSTRUMENT_DEFAULT;
+
             tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
             batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 
@@ -287,20 +295,22 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void initFormats() {
-            mDateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format));
+            mDateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format), Locale.getDefault());
             mBatteryFormat = NumberFormat.getPercentInstance();
         }
 
-        private SVG createHand(String handType) throws SVGParseException {
-            int id = getResources().getIdentifier(mInstrument + "_" + handType + "_hand", "raw", getPackageName());
+        private SVG createHand(MusicWatchFaceUtil.HandKind kind, boolean ambient) throws SVGParseException {
+            int id = getResources().getIdentifier((kind == MusicWatchFaceUtil.HandKind.HOUR ?
+                    mHourInstrument : mMinuteInstrument) +
+                    (ambient ? "_ambient" : "") + "_hand", "raw", getPackageName());
             return id == 0 ? null : SVG.getFromResource(getResources(), id);
         }
 
         private void createHands() throws SVGParseException {
-            hourHandSvg = createHand("hour");
-            minuteHandSvg = createHand("minute");
-            ambientHourHandSvg = createHand("ambient_hour");
-            ambientMinuteHandSvg = createHand("ambient_minute");
+            hourHandSvg = createHand(MusicWatchFaceUtil.HandKind.HOUR, false);
+            minuteHandSvg = createHand(MusicWatchFaceUtil.HandKind.MINUTE, false);
+            ambientHourHandSvg = createHand(MusicWatchFaceUtil.HandKind.HOUR, true);
+            ambientMinuteHandSvg = createHand(MusicWatchFaceUtil.HandKind.MINUTE, true);
         }
 
         @Override
@@ -636,12 +646,16 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                         public void onConfigDataMapFetched(DataMap startupConfig) {
                             // If the DataItem hasn't been created yet or some keys are missing,
                             // use the default values.
-                            final String initialInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_INSTRUMENT);
-                            Log.d(TAG, ">> Fetched startup config: " + initialInstrument);
+
+                            final String initialHourInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT);
+                            final String initialMinuteInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT);
+                            Log.d(TAG, ">> Fetched startup config: " + initialHourInstrument + "/" + initialMinuteInstrument);
                             MusicWatchFaceUtil.setDefaultValuesForMissingConfigKeys(startupConfig);
-                            if (initialInstrument == null) {
+
+                            if (initialHourInstrument == null || initialMinuteInstrument == null) {
                                 Log.d(TAG, "Completing config initialization with: " +
-                                        startupConfig.getString(MusicWatchFaceUtil.KEY_INSTRUMENT));
+                                        startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" +
+                                        startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
                                 MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, startupConfig);
                             }
 
@@ -652,25 +666,45 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void updateUiForConfigDataMap(DataMap config) {
-            if (config.containsKey(MusicWatchFaceUtil.KEY_INSTRUMENT)) {
-                final String instrument = config.get(MusicWatchFaceUtil.KEY_INSTRUMENT);
-                if (mInstrument == null || !mInstrument.equals(instrument)) {
-                    setInstrument(instrument);
-                    Log.d(TAG, "-- INVALIDATING AFTER NEW INSTRUMENT: " + instrument);
+            if (config.containsKey(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
+                final String instrument = config.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT);
+                if (mHourInstrument == null || !mHourInstrument.equals(instrument)) {
+                    setHourInstrument(instrument);
+                    Log.d(TAG, "-- INVALIDATING AFTER NEW HOUR INSTRUMENT: " + instrument);
                     invalidate();
                 } else {
-                    Log.d(TAG, "-- Same instrument, no change in config");
+                    Log.d(TAG, "-- Same hour instrument, no change in config");
                 }
-            } else {
-                Log.d(TAG, "STRANGE, UPDATE BUT NOT INSTRUMENT??");
+            }
+            if (config.containsKey(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)) {
+                final String instrument = config.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT);
+                if (mMinuteInstrument == null || !mMinuteInstrument.equals(instrument)) {
+                    setMinuteInstrument(instrument);
+                    Log.d(TAG, "-- INVALIDATING AFTER NEW MINUTE INSTRUMENT: " + instrument);
+                    invalidate();
+                } else {
+                    Log.d(TAG, "-- Same minute instrument, no change in config");
+                }
             }
         }
 
-        private void setInstrument(String instrument) {
+        private void setHourInstrument(String instrument) {
             try {
-                if (mInstrument == null || !mInstrument.equals(instrument)) {
-                    mInstrument = instrument;
-                    Log.i(TAG, "!!! Hands to be created for " + instrument);
+                if (mHourInstrument == null || !mHourInstrument.equals(instrument)) {
+                    mHourInstrument = instrument;
+                    Log.i(TAG, "!!! Hands to be created for hand instrument: " + instrument);
+                    createHands();
+                }
+            } catch (SVGParseException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void setMinuteInstrument(String instrument) {
+            try {
+                if (mMinuteInstrument == null || !mMinuteInstrument.equals(instrument)) {
+                    mMinuteInstrument = instrument;
+                    Log.i(TAG, "!!! Hands to be created for minute instrument: " + instrument);
                     createHands();
                 }
             } catch (SVGParseException e) {

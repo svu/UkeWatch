@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent" android:layout_height="fill_parent"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
     android:measureWithLargestChild="false"
     android:stretchColumns="*">
 
@@ -8,29 +9,30 @@
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         android:layout_gravity="top"
-        android:layout_span = "2"
         android:layout_weight="1"
         android:layout_marginTop="15dp">
 
         <ImageButton
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:id="@+id/guitar_btn"
+            android:id="@+id/guitars_btn"
             android:layout_column="0"
-            android:src="@mipmap/guitar_icon"
+            android:src="@mipmap/guitars_icon"
             android:padding="5dp"
             android:scaleType="fitCenter"
-            android:layout_marginLeft="15dp" />
+            android:layout_marginStart="15dp"
+            android:contentDescription="@+id/guitars_btn"/>
 
         <ImageButton
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:id="@+id/uke_btn"
+            android:id="@+id/ukes_btn"
             android:layout_column="1"
-            android:src="@mipmap/uke_icon"
+            android:src="@mipmap/ukes_icon"
             android:padding="5dp"
             android:scaleType="fitCenter"
-            android:layout_marginRight="15dp" />
+            android:layout_marginEnd="15dp"
+            android:contentDescription="@+id/ukes_btn"/>
     </TableRow>
 
     <TableRow
@@ -43,22 +45,24 @@
         <ImageButton
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:id="@+id/violin_btn"
+            android:id="@+id/violins_btn"
             android:layout_column="0"
-            android:src="@mipmap/violin_icon"
+            android:src="@mipmap/violins_icon"
             android:padding="5dp"
             android:scaleType="fitCenter"
-            android:layout_marginLeft="15dp" />
+            android:layout_marginStart="15dp"
+            android:contentDescription="@+id/violins_btn"/>
 
         <ImageButton
             android:layout_width="fill_parent"
             android:layout_height="fill_parent"
-            android:id="@+id/woodwind_btn"
+            android:id="@+id/woodwinds_btn"
             android:layout_column="1"
-            android:src="@mipmap/woodwind_icon"
+            android:src="@mipmap/woodwinds_icon"
             android:padding="5dp"
             android:scaleType="fitCenter"
-            android:layout_marginRight="15dp" />
+            android:layout_marginEnd="15dp"
+            android:contentDescription="@+id/woodwinds_btn"/>
     </TableRow>
 
 </TableLayout>
