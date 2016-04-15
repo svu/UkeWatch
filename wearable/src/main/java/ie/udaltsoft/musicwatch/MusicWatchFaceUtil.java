@@ -93,7 +93,7 @@ public final class MusicWatchFaceUtil {
         PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE);
         DataMap configToPut = putDataMapRequest.getDataMap();
         configToPut.putAll(newConfig);
-        Log.i(TAG, "!!! Instruments to be put as data item: " +
+        Log.i(TAG, "Instruments to be put as data item: " +
                 configToPut.getString(KEY_HOUR_INSTRUMENT) +
                 "/" +
                 configToPut.getString(KEY_MINUTE_INSTRUMENT));
@@ -101,7 +101,7 @@ public final class MusicWatchFaceUtil {
                 .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                     @Override
                     public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
-                        Log.d(TAG, "== putDataItem result status: " + dataItemResult.getStatus());
+                        Log.d(TAG, "putDataItem result status: " + dataItemResult.getStatus());
                     }
                 });
     }
