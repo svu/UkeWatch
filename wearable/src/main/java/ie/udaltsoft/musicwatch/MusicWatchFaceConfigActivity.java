@@ -77,6 +77,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     private String mCurrentConfigKey;
     private Paint mCircleBorderPaint;
     private Paint mCirclePaint;
+    private HashMap<String, Bitmap> mBitmaps = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -117,6 +118,15 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         mCirclePaint = new Paint();
         mCirclePaint.setColor(getResources().getColor(R.color.config_activity_circle));
         mCirclePaint.setAntiAlias(true);
+
+        try {
+            for (String i : mAllInstruments) {
+                mBitmaps.put(i, buildBitmap(getApplicationContext(), i));
+            }
+        } catch (SVGParseException ex) {
+            Log.e(TAG, "Could not build bitmap: " + ex);
+            ex.printStackTrace();
+        }
 
 
     }
@@ -229,6 +239,85 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, configKeysToOverwrite);
     }
 
+    private Bitmap buildBitmap(Context context, String instrument) throws SVGParseException {
+        final Resources r = getResources();
+        final int svgResourceId = r.getIdentifier(instrument + "_hand", "raw", context.getPackageName());
+
+        final SVG svg = SVG.getFromResource(r, svgResourceId);
+
+        // for vertical instruments, <1
+        final float svgWHAspectRatio = svg.getDocumentAspectRatio();
+        final PointF svgSize = new PointF(svg.getDocumentViewBox().width(),
+                svg.getDocumentViewBox().height());
+
+        Log.i(TAG, "Hand: " + instrument +
+                ", SVG w/h ratio: " + svgWHAspectRatio +
+                " or may be " + (svgSize.x / svgSize.y) +
+                ", SVG: " + svgSize.x + ":" + svgSize.y);
+        // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
+        final PointF bmpSize = new PointF(InstrumentItem.MAX_BMP_SIZE,
+                InstrumentItem.MAX_BMP_SIZE);
+
+        final float scaledH = InstrumentItem.MAX_BMP_SIZE * svgWHAspectRatio;
+        Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
+
+        final Bitmap bmp = Bitmap.createBitmap((int) bmpSize.x,
+                (int) bmpSize.y,
+                Bitmap.Config.ARGB_8888);
+        final float reduceInstrumentRatio = 0.8f;
+        final float scale = scaledH / svgSize.x * reduceInstrumentRatio;
+        Log.i(TAG, "scale, converting svg to bmp: " + scale);
+
+        final Canvas canvas = new Canvas(bmp);
+
+                /*Paint pb = new Paint();
+                pb.setStrokeWidth(10);
+                pb.setColor(Color.BLUE);
+
+                Paint pg = new Paint();
+                pg.setStrokeWidth(10);
+                pg.setColor(Color.GREEN);*/
+
+        //canvas.drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
+        // V from left-top -> centre -> right-top
+        canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2, mCircleBorderPaint);
+        canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2 * 0.95f, mCirclePaint);
+
+        //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+        //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+
+        canvas.save();
+        // This is to make sure scaled and unscaled centres are the same
+        canvas.translate((bmpSize.x - svgSize.y * scale) / 2f,
+                (bmpSize.y - svgSize.x * scale) / 2f);
+        canvas.scale(scale, scale);
+
+        // ^ from left-bottom -> centre -> right-bottom
+                /*canvas.drawLine(0,
+                        svgSize.x,
+                        svgSize.y / 2,
+                        svgSize.x / 2, pr);
+
+                canvas.drawLine(svgSize.y / 2,
+                        svgSize.x / 2,
+                        svgSize.y,
+                        svgSize.x, pr);*/
+
+        final PointF offset = new PointF(svgSize.y / 2f, svgSize.x / 2f);
+        Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
+        canvas.translate(-offset.x + offset.y, -offset.x + offset.y);
+        canvas.rotate(-90f, offset.x, offset.y);
+
+                /*canvas.drawRect(0, 0, svgw, svgh/2, pr);
+                canvas.drawLine(svgw/4, 0, svgw/4, svgh/2, pg);
+                canvas.drawCircle(svgw/2, 0, svgw/2, pb);
+*/
+        svg.renderToCanvas(canvas, new RectF(0, 0, svgSize.x, svgSize.y));
+        canvas.restore();
+
+        return bmp;
+    }
+
     private class InstrumentListAdapter extends WearableListView.Adapter {
 
         public InstrumentListAdapter() {
@@ -280,7 +369,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         private static final float SHRINK_PREVIEW_ALPHA = .5f;
         private static final float EXPAND_PREVIEW_ALPHA = 1f;
 
-        private static final float MAX_BMP_SIZE = 250;
+        public static final float MAX_BMP_SIZE = 250;
 
         private final ImageView mInstrumentPreview;
 
@@ -334,93 +423,12 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         private void setInstrument(String instrument) {
             mInstrument = instrument;
 
-            try {
-                final Resources r = getResources();
-
-                final int svgResourceId = r.getIdentifier(instrument + "_hand", "raw", getContext().getPackageName());
-
-                final SVG svg = SVG.getFromResource(r, svgResourceId);
-
-                // for vertical instruments, <1
-                final float svgWHAspectRatio = svg.getDocumentAspectRatio();
-                final PointF svgSize = new PointF(svg.getDocumentViewBox().width(),
-                        svg.getDocumentViewBox().height());
-
-                Log.i(TAG, "Hand: " + instrument +
-                        ", SVG w/h ratio: " + svgWHAspectRatio +
-                        " or may be " + (svgSize.x / svgSize.y) +
-                        ", SVG: " + svgSize.x + ":" + svgSize.y);
-                // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
-                final PointF bmpSize = new PointF(MAX_BMP_SIZE,
-                        MAX_BMP_SIZE);
-
-                final float scaledH = MAX_BMP_SIZE * svgWHAspectRatio;
-                Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
-
-                final Bitmap bmp = Bitmap.createBitmap((int) bmpSize.x,
-                        (int) bmpSize.y,
-                        Bitmap.Config.ARGB_8888);
-                final float reduceInstrumentRatio = 0.8f;
-                final float scale = scaledH / svgSize.x * reduceInstrumentRatio;
-                Log.i(TAG, "scale, converting svg to bmp: " + scale);
-
-                final Canvas canvas = new Canvas(bmp);
-
-                /*Paint pb = new Paint();
-                pb.setStrokeWidth(10);
-                pb.setColor(Color.BLUE);
-
-                Paint pg = new Paint();
-                pg.setStrokeWidth(10);
-                pg.setColor(Color.GREEN);*/
-
-                //canvas.drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
-                // V from left-top -> centre -> right-top
-                canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2, mCircleBorderPaint);
-                canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2 * 0.95f, mCirclePaint);
-
-                //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
-                //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
-
-                canvas.save();
-                // This is to make sure scaled and unscaled centres are the same
-                canvas.translate((bmpSize.x - svgSize.y * scale) / 2f,
-                        (bmpSize.y - svgSize.x * scale) / 2f);
-                canvas.scale(scale, scale);
-
-                // ^ from left-bottom -> centre -> right-bottom
-                /*canvas.drawLine(0,
-                        svgSize.x,
-                        svgSize.y / 2,
-                        svgSize.x / 2, pr);
-
-                canvas.drawLine(svgSize.y / 2,
-                        svgSize.x / 2,
-                        svgSize.y,
-                        svgSize.x, pr);*/
-
-                final PointF offset = new PointF(svgSize.y / 2f, svgSize.x / 2f);
-                Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
-                canvas.translate(-offset.x + offset.y, -offset.x + offset.y);
-                canvas.rotate(-90f, offset.x, offset.y);
-
-                /*canvas.drawRect(0, 0, svgw, svgh/2, pr);
-                canvas.drawLine(svgw/4, 0, svgw/4, svgh/2, pg);
-                canvas.drawCircle(svgw/2, 0, svgw/2, pb);
-*/
-                svg.renderToCanvas(canvas, new RectF(0, 0, svgSize.x, svgSize.y));
-                canvas.restore();
-
+            final Bitmap bmp = mBitmaps.get(instrument);
+            if (bmp != null)
                 mInstrumentPreview.setImageBitmap(bmp);
-                mInstrumentPreview.setCropToPadding(false);
-                mInstrumentPreview.setAdjustViewBounds(true);
-                mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
-                //mInstrumentPreview.getLayoutParams().height = (int)bmpSize.y;
-                //mInstrumentPreview.getLayoutParams().height = 150;
-
-            } catch (SVGParseException e) {
-                e.printStackTrace();
-            }
+            mInstrumentPreview.setCropToPadding(false);
+            mInstrumentPreview.setAdjustViewBounds(true);
+            mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
         }
 
         private String getInstrument() {
