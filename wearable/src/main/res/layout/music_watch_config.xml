@@ -18,7 +18,8 @@
     android:id="@+id/content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/config_activity_background">
+    android:background="@color/config_activity_background"
+    >
     <TextView
         android:id="@+id/header"
         android:layout_width="match_parent"
@@ -29,16 +30,16 @@
         android:textSize="20sp"
         android:textAlignment="center"
         android:textColor="@color/config_activity_header_text_color"
-        android:background="@color/config_activity_header_background"
+        android:background="@android:color/transparent"
         android:text="@string/hour"
         android:fontFamily="sans-serif-condensed-light"
         android:gravity="center_horizontal"
-        app:layout_box="left|top"/>
+        app:layout_box="top"/>
     <android.support.wearable.view.WearableListView
         android:id="@+id/instrument_picker"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
         android:gravity="center_horizontal"
-        app:layout_box="left|bottom"/>
+        app:layout_box="bottom"/>
 </android.support.wearable.view.BoxInsetLayout>
