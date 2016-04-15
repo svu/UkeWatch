@@ -32,7 +32,6 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
@@ -41,7 +40,6 @@ import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.BoxInsetLayout;
 import android.support.wearable.view.WearableListView;
-import android.text.TextPaint;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
@@ -79,6 +77,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     private Paint mCirclePaint;
     private HashMap<String, Bitmap> mBitmaps = new HashMap<>();
 
+    public static final float MAX_BMP_SIZE = 150;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -102,13 +102,12 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                         MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
                 final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
                         MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
                 mInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
                 mInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
                 scrollToSelected(hi, mListView);
             }
         });
-
-        mHeader.setText(R.string.hour);
 
         mCircleBorderPaint = new Paint();
         mCircleBorderPaint.setStrokeWidth(10);
@@ -116,19 +115,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         mCircleBorderPaint.setAntiAlias(true);
 
         mCirclePaint = new Paint();
-        mCirclePaint.setColor(getResources().getColor(R.color.config_activity_circle));
+        mCirclePaint.setColor(getResources().getColor(R.color.config_activity_circle_background));
         mCirclePaint.setAntiAlias(true);
-
-        try {
-            for (String i : mAllInstruments) {
-                mBitmaps.put(i, buildBitmap(getApplicationContext(), i));
-            }
-        } catch (SVGParseException ex) {
-            Log.e(TAG, "Could not build bitmap: " + ex);
-            ex.printStackTrace();
-        }
-
-
     }
 
     private void scrollToSelected(String instrument,
@@ -187,13 +175,12 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     @Override // WearableListView.ClickListener
     public void onClick(WearableListView.ViewHolder viewHolder) {
         InstrumentItemViewHolder colorItemViewHolder = (InstrumentItemViewHolder) viewHolder;
-        updateConfigDataItem(mCurrentConfigKey,
-                colorItemViewHolder.mColorItem.getInstrument());
+        updateConfigDataItem(mCurrentConfigKey, colorItemViewHolder.mColorItem.getInstrument());
 
         if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
             mHeader.setText(R.string.minute);
             mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
-            scrollToSelected(mInstruments.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT), mListView);
+            scrollToSelected(mInstruments.get(mCurrentConfigKey), mListView);
         } else {
             finish();
         }
@@ -250,23 +237,22 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         final PointF svgSize = new PointF(svg.getDocumentViewBox().width(),
                 svg.getDocumentViewBox().height());
 
-        Log.i(TAG, "Hand: " + instrument +
+        /*Log.i(TAG, "Hand: " + instrument +
                 ", SVG w/h ratio: " + svgWHAspectRatio +
                 " or may be " + (svgSize.x / svgSize.y) +
-                ", SVG: " + svgSize.x + ":" + svgSize.y);
+                ", SVG: " + svgSize.x + ":" + svgSize.y);*/
         // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
-        final PointF bmpSize = new PointF(InstrumentItem.MAX_BMP_SIZE,
-                InstrumentItem.MAX_BMP_SIZE);
+        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE);
 
-        final float scaledH = InstrumentItem.MAX_BMP_SIZE * svgWHAspectRatio;
-        Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
+        final float scaledH = MAX_BMP_SIZE * svgWHAspectRatio;
+        //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
 
         final Bitmap bmp = Bitmap.createBitmap((int) bmpSize.x,
                 (int) bmpSize.y,
                 Bitmap.Config.ARGB_8888);
         final float reduceInstrumentRatio = 0.8f;
         final float scale = scaledH / svgSize.x * reduceInstrumentRatio;
-        Log.i(TAG, "scale, converting svg to bmp: " + scale);
+        //Log.i(TAG, "scale, converting svg to bmp: " + scale);
 
         final Canvas canvas = new Canvas(bmp);
 
@@ -304,7 +290,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                         svgSize.x, pr);*/
 
         final PointF offset = new PointF(svgSize.y / 2f, svgSize.x / 2f);
-        Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
+        //Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
         canvas.translate(-offset.x + offset.y, -offset.x + offset.y);
         canvas.rotate(-90f, offset.x, offset.y);
 
@@ -369,8 +355,6 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         private static final float SHRINK_PREVIEW_ALPHA = .5f;
         private static final float EXPAND_PREVIEW_ALPHA = 1f;
 
-        public static final float MAX_BMP_SIZE = 250;
-
         private final ImageView mInstrumentPreview;
 
         private final ObjectAnimator mExpandPreviewAnimator;
@@ -423,9 +407,22 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         private void setInstrument(String instrument) {
             mInstrument = instrument;
 
-            final Bitmap bmp = mBitmaps.get(instrument);
-            if (bmp != null)
+            Bitmap bmp = mBitmaps.get(instrument);
+            if (bmp == null) {
+                try {
+                    Log.i(TAG, "The instrument bitmap was not built yet, building " + instrument);
+                    bmp = buildBitmap(getContext(), instrument);
+                    mBitmaps.put(instrument, bmp);
+                } catch (SVGParseException ex) {
+                    Log.e(TAG, "Could not build bitmap: " + ex);
+                    ex.printStackTrace();
+                }
+            }
+            if (bmp != null) {
                 mInstrumentPreview.setImageBitmap(bmp);
+            } else {
+                Log.e(TAG, "Could not find bitmap for " + instrument);
+            }
             mInstrumentPreview.setCropToPadding(false);
             mInstrumentPreview.setAdjustViewBounds(true);
             mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
