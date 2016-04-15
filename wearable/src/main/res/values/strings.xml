@@ -6,11 +6,6 @@
 
     <string name="date_format">EEE, MMM d</string>
 
-    <string name="instrument_ukes">ukes</string>
-    <string name="instrument_violins">violins</string>
-    <string name="instrument_guitars">guitars</string>
-    <string name="instrument_woodwinds">woodwinds</string>
-
     <string name="instrument_wood_uke">wood_uke</string>
     <string name="instrument_pink_uke">pink_uke</string>
 
@@ -22,25 +17,17 @@
 
     <string name="instrument_saxophone">saxophone</string>
     <string name="instrument_oboe">oboe</string>
+    <string name="hour">Hour</string>
+    <string name="minute">Minute</string>
 
-    <string-array name="instruments_pairs_array">
-        <item>@string/instrument_ukes</item>
-        <item>@string/instrument_violins</item>
-        <item>@string/instrument_guitars</item>
-        <item>@string/instrument_woodwinds</item>
-    </string-array>
-
-    <string-array name="hour_instruments_array">
+    <string-array name="all_instruments_array">
         <item>@string/instrument_wood_uke</item>
-        <item>@string/instrument_violin</item>
-        <item>@string/instrument_les_paul</item>
-        <item>@string/instrument_saxophone</item>
-    </string-array>
-
-    <string-array name="minute_instruments_array">
         <item>@string/instrument_pink_uke</item>
+        <item>@string/instrument_violin</item>
         <item>@string/instrument_bow</item>
+        <item>@string/instrument_les_paul</item>
         <item>@string/instrument_gibson_flying_v</item>
+        <item>@string/instrument_saxophone</item>
         <item>@string/instrument_oboe</item>
     </string-array>
 

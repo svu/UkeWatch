@@ -28,6 +28,7 @@ package ie.udaltsoft.musicwatch;
 
 import android.graphics.Color;
 import android.net.Uri;
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -64,7 +65,7 @@ public final class MusicWatchFaceUtil {
         Wearable.NodeApi.getLocalNode(client).setResultCallback(
                 new ResultCallback<NodeApi.GetLocalNodeResult>() {
                     @Override
-                    public void onResult(NodeApi.GetLocalNodeResult getLocalNodeResult) {
+                    public void onResult(@NonNull NodeApi.GetLocalNodeResult getLocalNodeResult) {
                         String localNode = getLocalNodeResult.getNode().getId();
                         Uri uri = new Uri.Builder()
                                 .scheme("wear")
@@ -76,15 +77,6 @@ public final class MusicWatchFaceUtil {
                     }
                 }
         );
-    }
-
-    public static void overwriteKeysInConfigDataMap(final GoogleApiClient googleApiClient,
-                                                    final DataMap configKeysToOverwrite) {
-        Log.i(TAG, "Instrument just overwritten from UI: " +
-                configKeysToOverwrite.getString(KEY_HOUR_INSTRUMENT) +
-                "/" +
-                configKeysToOverwrite.getString(KEY_MINUTE_INSTRUMENT));
-        MusicWatchFaceUtil.putConfigDataItem(googleApiClient, configKeysToOverwrite);
     }
 
     public static void setDefaultValuesForMissingConfigKeys(DataMap config) {
@@ -104,11 +96,11 @@ public final class MusicWatchFaceUtil {
         Log.i(TAG, "!!! Instruments to be put as data item: " +
                 configToPut.getString(KEY_HOUR_INSTRUMENT) +
                 "/" +
-                configToPut.getString(MINUTE_INSTRUMENT_DEFAULT));
+                configToPut.getString(KEY_MINUTE_INSTRUMENT));
         Wearable.DataApi.putDataItem(googleApiClient, putDataMapRequest.asPutDataRequest())
                 .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
                     @Override
-                    public void onResult(DataApi.DataItemResult dataItemResult) {
+                    public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
                         Log.d(TAG, "== putDataItem result status: " + dataItemResult.getStatus());
                     }
                 });
@@ -123,7 +115,7 @@ public final class MusicWatchFaceUtil {
         }
 
         @Override
-        public void onResult(DataApi.DataItemResult dataItemResult) {
+        public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
             if (dataItemResult.getStatus().isSuccess()) {
                 if (dataItemResult.getDataItem() != null) {
                     DataItem configDataItem = dataItemResult.getDataItem();
