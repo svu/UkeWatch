@@ -2,7 +2,6 @@
     <string name="app_name">Music Watch</string>
     <string name="my_analog_name">Music Watch</string>
     <string name="music_config_name">Music watch face configuration</string>
-    <string name="music_instrument">Instrument</string>
 
     <string name="date_format">EEE, MMM d</string>
 
