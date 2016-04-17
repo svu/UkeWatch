@@ -5,6 +5,5 @@
     <color name="analog_background">#000000</color>
     <color name="config_activity_background">#000000</color>
     <color name="config_activity_header_text_color">#959595</color>
-    <color name="config_activity_circle_background">#909090</color>
-    <color name="config_activity_circle_border">#804000</color>
+    <color name="config_activity_circle_border">#404040</color>
 </resources>
