@@ -115,7 +115,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
     private Paint createBorderPaint(int id) {
         final Paint paint = new Paint();
-        paint.setStrokeWidth(6);
+        paint.setStrokeWidth(4);
         paint.setColor(getResources().getColor(id));
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
@@ -268,8 +268,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
         //canvas.drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
         // V from left-top -> centre -> right-top
-        canvas.drawOval(3, 3,
-                bmpSize.x - 3, bmpSize.y - 3, mCircleBorderPaint);
+        canvas.drawOval(2, 2, bmpSize.x - 2, bmpSize.y - 2, mCircleBorderPaint);
 
         //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
         //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
