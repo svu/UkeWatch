@@ -74,10 +74,11 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     private HashMap<String, String> mInstruments = new HashMap<>();
     private String mCurrentConfigKey;
     private Paint mCircleBorderPaint;
-    private Paint mCirclePaint;
     private HashMap<String, Bitmap> mBitmaps = new HashMap<>();
 
-    public static final float MAX_BMP_SIZE = 150;
+    private static final float MAX_BMP_SIZE = 150;
+    private static final float REDUCED_INSTRUMENT_RATIO = 0.5f;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -109,16 +110,18 @@ public class MusicWatchFaceConfigActivity extends Activity implements
             }
         });
 
-        mCircleBorderPaint = new Paint();
-        mCircleBorderPaint.setStrokeWidth(10);
-        mCircleBorderPaint.setColor(getResources().getColor(R.color.config_activity_circle_border));
-        mCircleBorderPaint.setAntiAlias(true);
-
-        mCirclePaint = new Paint();
-        mCirclePaint.setColor(getResources().getColor(R.color.config_activity_circle_background));
-        mCirclePaint.setAntiAlias(true);
+        mCircleBorderPaint = createBorderPaint(R.color.config_activity_circle_border);
     }
 
+    private Paint createBorderPaint(int id) {
+        final Paint paint = new Paint();
+        paint.setStrokeWidth(6);
+        paint.setColor(getResources().getColor(id));
+        paint.setAntiAlias(true);
+        paint.setStyle(Paint.Style.STROKE);
+        return paint;
+
+    }
     private void scrollToSelected(String instrument,
                                   WearableListView view) {
         int idx = 0;
@@ -242,16 +245,15 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                 " or may be " + (svgSize.x / svgSize.y) +
                 ", SVG: " + svgSize.x + ":" + svgSize.y);*/
         // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
-        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE);
+        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE/2f);
 
-        final float scaledH = MAX_BMP_SIZE * svgWHAspectRatio;
+        final float scaledH = bmpSize.x * svgWHAspectRatio;
         //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
 
         final Bitmap bmp = Bitmap.createBitmap((int) bmpSize.x,
                 (int) bmpSize.y,
                 Bitmap.Config.ARGB_8888);
-        final float reduceInstrumentRatio = 0.8f;
-        final float scale = scaledH / svgSize.x * reduceInstrumentRatio;
+        final float scale = scaledH / svgSize.x * REDUCED_INSTRUMENT_RATIO;
         //Log.i(TAG, "scale, converting svg to bmp: " + scale);
 
         final Canvas canvas = new Canvas(bmp);
@@ -266,8 +268,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
         //canvas.drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
         // V from left-top -> centre -> right-top
-        canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2, mCircleBorderPaint);
-        canvas.drawCircle(bmpSize.x / 2, bmpSize.y / 2, bmpSize.x / 2 * 0.95f, mCirclePaint);
+        canvas.drawOval(3, 3,
+                bmpSize.x - 3, bmpSize.y - 3, mCircleBorderPaint);
 
         //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
         //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
