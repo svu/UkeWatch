@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Музыкальные Часы</string>
+    <string name="hour">Часы</string>
+    <string name="minute">Минуты</string>
+    <string name="visible_watch_name" translatable="false">Музыкальные часы</string>
+</resources>

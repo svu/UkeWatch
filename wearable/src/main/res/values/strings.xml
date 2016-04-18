@@ -1,21 +1,21 @@
 <resources>
     <string name="app_name">Music Watch</string>
-    <string name="my_analog_name">Music Watch</string>
-    <string name="music_config_name">Music watch face configuration</string>
+    <string name="visible_watch_name">Music Watch</string>
+    <string name="music_config_name" translatable="false">Music watch face configuration</string>
 
-    <string name="date_format">EEE, MMM d</string>
+    <string name="date_format" translatable="false">EEE, MMM d</string>
 
-    <string name="instrument_wood_uke">wood_uke</string>
-    <string name="instrument_pink_uke">pink_uke</string>
+    <string name="instrument_wood_uke" translatable="false">wood_uke</string>
+    <string name="instrument_pink_uke" translatable="false">pink_uke</string>
 
-    <string name="instrument_violin">violin</string>
-    <string name="instrument_bow">bow</string>
+    <string name="instrument_violin" translatable="false">violin</string>
+    <string name="instrument_bow" translatable="false">bow</string>
 
-    <string name="instrument_les_paul">les_paul</string>
-    <string name="instrument_gibson_flying_v">gibson_flying_v</string>
+    <string name="instrument_les_paul" translatable="false">les_paul</string>
+    <string name="instrument_gibson_flying_v" translatable="false">gibson_flying_v</string>
 
-    <string name="instrument_saxophone">saxophone</string>
-    <string name="instrument_oboe">oboe</string>
+    <string name="instrument_saxophone" translatable="false">saxophone</string>
+    <string name="instrument_oboe" translatable="false">oboe</string>
     <string name="hour">Hour</string>
     <string name="minute">Minute</string>
 

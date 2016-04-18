@@ -15,7 +15,7 @@
         android:theme="@android:style/Theme.DeviceDefault" >
         <service
             android:name=".MusicWatchFace"
-            android:label="@string/my_analog_name"
+            android:label="@string/visible_watch_name"
             android:permission="android.permission.BIND_WALLPAPER" >
             <meta-data
                 android:name="android.service.wallpaper"
