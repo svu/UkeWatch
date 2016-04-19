@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Montre de la Musique</string>
+    <string name="visible_watch_name">Montre de la Musique</string>
+    <string name="hours">Heures</string>
+    <string name="minutes">Minutes</string>
+</resources>
