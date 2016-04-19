@@ -181,7 +181,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         updateConfigDataItem(mCurrentConfigKey, colorItemViewHolder.mColorItem.getInstrument());
 
         if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-            mHeader.setText(R.string.minute);
+            mHeader.setText(R.string.minutes);
             mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
             scrollToSelected(mInstruments.get(mCurrentConfigKey), mListView);
         } else {

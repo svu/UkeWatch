@@ -16,8 +16,8 @@
 
     <string name="instrument_saxophone" translatable="false">saxophone</string>
     <string name="instrument_oboe" translatable="false">oboe</string>
-    <string name="hour">Hour</string>
-    <string name="minute">Minute</string>
+    <string name="hours">Hours</string>
+    <string name="minutes">Minutes</string>
 
     <string-array name="all_instruments_array">
         <item>@string/instrument_wood_uke</item>

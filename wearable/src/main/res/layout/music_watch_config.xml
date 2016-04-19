@@ -31,7 +31,7 @@
         android:textAlignment="center"
         android:textColor="@color/config_activity_header_text_color"
         android:background="@android:color/transparent"
-        android:text="@string/hour"
+        android:text="@string/hours"
         android:fontFamily="sans-serif-condensed-light"
         android:gravity="center_horizontal"
         app:layout_box="top"/>
