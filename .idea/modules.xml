@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/UkeWatch.iml" filepath="$PROJECT_DIR$/UkeWatch.iml" />
-      <module fileurl="file://$PROJECT_DIR$/handheld/handheld.iml" filepath="$PROJECT_DIR$/handheld/handheld.iml" />
       <module fileurl="file://$PROJECT_DIR$/wearable/wearable.iml" filepath="$PROJECT_DIR$/wearable/wearable.iml" />
     </modules>
   </component>

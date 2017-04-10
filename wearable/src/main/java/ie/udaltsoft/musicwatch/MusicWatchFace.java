@@ -42,12 +42,13 @@ import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.support.annotation.NonNull;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
-
 
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
@@ -62,7 +63,6 @@ import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Wearable;
 
 import java.text.DateFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -130,7 +130,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 330 * Math.PI / 180
         };
 
-        private GoogleApiClient mGoogleApiClient;
+        private final GoogleApiClient mGoogleApiClient;
 
         Paint mBackgroundPaint;
         Paint mBackgroundPaintAmbient;
@@ -161,7 +161,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private RectF minuteHandRect;
 
         private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
-        private NumberFormat mBatteryFormat = NumberFormat.getPercentInstance();
 
         /**
          * Handler to update the time once a second in interactive mode.
@@ -249,28 +248,25 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
 
             setWatchFaceStyle(new WatchFaceStyle.Builder(MusicWatchFace.this)
-                    .setCardPeekMode(WatchFaceStyle.PEEK_MODE_SHORT)
-                    .setBackgroundVisibility(WatchFaceStyle.BACKGROUND_VISIBILITY_INTERRUPTIVE)
-                    .setShowSystemUiTime(false)
                     .build());
 
             final Resources resources = MusicWatchFace.this.getResources();
 
             mBackgroundPaintAmbient = new Paint();
-            mBackgroundPaintAmbient.setColor(resources.getColor(R.color.analog_background_ambient));
+            mBackgroundPaintAmbient.setColor(ResourcesCompat.getColor(resources, R.color.analog_background_ambient, null));
 
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(resources.getColor(R.color.analog_background));
+            mBackgroundPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_background, null));
 
             mHandPaint = new Paint();
-            mHandPaint.setColor(resources.getColor(R.color.analog_hands));
+            mHandPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_hands, null));
             mHandPaint.setStrokeWidth(resources.getDimension(R.dimen.analog_hand_stroke));
             mHandPaint.setAntiAlias(true);
             mHandPaint.setStrokeCap(Paint.Cap.ROUND);
             mHandPaint.setTextSize(24);
 
             mStaffPaint = new Paint();
-            mStaffPaint.setColor(resources.getColor(R.color.analog_hands));
+            mStaffPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_hands, null));
             mStaffPaint.setStrokeWidth(resources.getDimension(R.dimen.staff_stroke));
             mStaffPaint.setAntiAlias(true);
             mStaffPaint.setStrokeCap(Paint.Cap.ROUND);
@@ -296,7 +292,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private void initFormats() {
             mDateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format), Locale.getDefault());
-            mBatteryFormat = NumberFormat.getPercentInstance();
         }
 
         private SVG createHand(MusicWatchFaceUtil.HandKind kind, boolean ambient) throws SVGParseException {
@@ -417,7 +412,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 canvas.save();
                 renderHand(canvas,
                         mTime.get(GregorianCalendar.MINUTE) * 6,
-                        MINUTE_HAND_RATIO,
                         minuteHandRect,
                         minuteRotationPoint,
                         minuteHandSvg);
@@ -427,7 +421,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 canvas.save();
                 renderHand(canvas,
                         (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                        HOUR_HAND_RATIO,
                         hourHandRect,
                         hourRotationPoint,
                         hourHandSvg);
@@ -437,7 +430,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 canvas.save();
                 renderHand(canvas,
                         mTime.get(GregorianCalendar.MINUTE) * 6,
-                        MINUTE_HAND_RATIO,
                         minuteHandRect,
                         minuteRotationPoint,
                         ambientMinuteHandSvg);
@@ -447,7 +439,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 canvas.save();
                 renderHand(canvas,
                         (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                        HOUR_HAND_RATIO,
                         hourHandRect,
                         hourRotationPoint,
                         ambientHourHandSvg);
@@ -457,7 +448,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private void renderHand(Canvas canvas,
                                 float angle,
-                                float handScale,
                                 RectF rect,
                                 PointF rotationPoint,
                                 SVG svg) {
@@ -592,12 +582,12 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             majorBitmap = new Bitmap[6];
             scales = new float[6];
 
-            createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false, false);
-            createBitmapFromSvg(threeOCSvg, markBounds, 1, false, false);
-            createBitmapFromSvg(sixOCSvg, markBounds, 2, false, false);
-            createBitmapFromSvg(nineOCSvg, markBounds, 3, false, false);
-            createBitmapFromSvg(hourSvg, markHourBounds, 4, false, false);
-            createBitmapFromSvg(noteSvg, markNoteBounds, 5, false, true);
+            createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false);
+            createBitmapFromSvg(threeOCSvg, markBounds, 1, false);
+            createBitmapFromSvg(sixOCSvg, markBounds, 2, false);
+            createBitmapFromSvg(nineOCSvg, markBounds, 3, false);
+            createBitmapFromSvg(hourSvg, markHourBounds, 4, false);
+            createBitmapFromSvg(noteSvg, markNoteBounds, 5, true);
         }
 
         private void calcMarkHourLocations(Bitmap bitmap) {
@@ -611,9 +601,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             }
         }
 
-        private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedX, boolean isForcedY) {
-            scales[idx] = isForcedX ? bounds.x / svg.getDocumentWidth() :
-                    isForcedY ? bounds.y / svg.getDocumentHeight() :
+        private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedY) {
+            scales[idx] = isForcedY ? bounds.y / svg.getDocumentHeight() :
                             Math.min(bounds.x / svg.getDocumentWidth(), bounds.y / svg.getDocumentHeight());
 
             majorBitmap[idx] = Bitmap.createBitmap(Math.round(svg.getDocumentWidth() * scales[idx]),
@@ -737,8 +726,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         @Override
-        public void onConnectionFailed(ConnectionResult connectionResult) {
-
+        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         }
     }
 }

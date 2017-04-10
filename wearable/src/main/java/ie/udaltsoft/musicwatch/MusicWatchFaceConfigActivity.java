@@ -37,6 +37,7 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.RecyclerView;
 import android.support.wearable.view.BoxInsetLayout;
 import android.support.wearable.view.WearableListView;
@@ -71,10 +72,10 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     private TextView mHeader;
     private WearableListView mListView;
 
-    private HashMap<String, String> mInstruments = new HashMap<>();
+    private final HashMap<String, String> mInstruments = new HashMap<>();
     private String mCurrentConfigKey;
     private Paint mCircleBorderPaint;
-    private HashMap<String, Bitmap> mBitmaps = new HashMap<>();
+    private final HashMap<String, Bitmap> mBitmaps = new HashMap<>();
 
     private static final float MAX_BMP_SIZE = 150;
     private static final float REDUCED_INSTRUMENT_RATIO = 0.5f;
@@ -89,7 +90,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
         mAllInstruments = Arrays.asList(getResources().getStringArray(R.array.all_instruments_array));
 
-        mListView = preparePicker(R.id.instrument_picker);
+        mListView = preparePicker();
 
         mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT;
 
@@ -110,13 +111,13 @@ public class MusicWatchFaceConfigActivity extends Activity implements
             }
         });
 
-        mCircleBorderPaint = createBorderPaint(R.color.config_activity_circle_border);
+        mCircleBorderPaint = createBorderPaint();
     }
 
-    private Paint createBorderPaint(int id) {
+    private Paint createBorderPaint() {
         final Paint paint = new Paint();
         paint.setStrokeWidth(4);
-        paint.setColor(getResources().getColor(id));
+        paint.setColor(ResourcesCompat.getColor(getResources(), R.color.config_activity_circle_border, null));
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         return paint;
@@ -135,8 +136,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     }
 
     @NonNull
-    private WearableListView preparePicker(int id) {
-        final WearableListView listView = (WearableListView) findViewById(id);
+    private WearableListView preparePicker() {
+        final WearableListView listView = (WearableListView) findViewById(R.id.instrument_picker);
         BoxInsetLayout content = (BoxInsetLayout) findViewById(R.id.content);
         // BoxInsetLayout adds padding by default on round devices. Add some on square devices.
         content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {

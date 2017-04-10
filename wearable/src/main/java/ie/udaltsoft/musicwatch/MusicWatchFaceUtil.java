@@ -26,7 +26,6 @@
 
 package ie.udaltsoft.musicwatch;
 
-import android.graphics.Color;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.util.Log;
@@ -45,7 +44,7 @@ public final class MusicWatchFaceUtil {
 
     public enum HandKind {HOUR, MINUTE}
 
-    public static final String TAG = "MusicWatchFaceUtil";
+    private static final String TAG = "MusicWatchFaceUtil";
 
     public static final String KEY_HOUR_INSTRUMENT = "HOUR_INSTRUMENT";
     public static final String KEY_MINUTE_INSTRUMENT = "MINUTE_INSTRUMENT";
