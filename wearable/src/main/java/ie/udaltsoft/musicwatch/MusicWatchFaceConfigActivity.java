@@ -26,7 +26,6 @@
 
 package ie.udaltsoft.musicwatch;
 
-import android.animation.ObjectAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.res.Resources;
@@ -65,14 +64,15 @@ public class MusicWatchFaceConfigActivity extends Activity {
     private static final String TAG = "MusicWatchFaceConfig";
 
     private GoogleApiClient mGoogleApiClient;
-    private List<String> mAllInstrumentIds;
     private TextView mHeader;
     private WearableRecyclerView mListView;
 
     private final HashMap<String, String> mSelectedInstruments = new HashMap<>();
     private String mCurrentConfigKey;
-    private Paint mCircleBorderPaint;
-    private final HashMap<String, Bitmap> mBitmaps = new HashMap<>();
+
+    private static List<String> mAllInstrumentIds;
+    private static final HashMap<String, Bitmap> mBitmaps = new HashMap<>();
+    private static Paint mCircleBorderPaint;
 
     private static final float MAX_BMP_SIZE = 150;
     private static final float REDUCED_INSTRUMENT_RATIO = 0.5f;
@@ -85,8 +85,6 @@ public class MusicWatchFaceConfigActivity extends Activity {
 
         mHeader = (TextView) findViewById(R.id.header);
 
-        mAllInstrumentIds = Arrays.asList(getResources().getStringArray(R.array.all_instruments_array));
-
         mListView = preparePicker();
 
         mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT;
@@ -94,7 +92,6 @@ public class MusicWatchFaceConfigActivity extends Activity {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API).build();
 
-        Log.i(TAG, "=== LOADING INSTRUMENTS ===");
         MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
             @Override
             public void onConfigDataMapFetched(DataMap config) {
@@ -108,19 +105,34 @@ public class MusicWatchFaceConfigActivity extends Activity {
                 scrollToSelected(hi, mListView);
             }
         });
-
-        mCircleBorderPaint = createBorderPaint();
     }
 
-    private Paint createBorderPaint() {
+    public static void buildAllBitmaps(Resources res, Context context) {
+        mCircleBorderPaint = createBorderPaint(res);
+
+        mAllInstrumentIds = Arrays.asList(res.getStringArray(R.array.all_instruments_array));
+        for (String instrumentId : mAllInstrumentIds) {
+            try {
+                Log.i(TAG, "The instrument bitmap was not built yet, building " + instrumentId);
+                final Bitmap bmp = buildBitmap(res, context, instrumentId);
+                mBitmaps.put(instrumentId, bmp);
+            } catch (SVGParseException ex) {
+                Log.e(TAG, "Could not build bitmap: " + ex);
+                ex.printStackTrace();
+            }
+        }
+    }
+
+    private static Paint createBorderPaint(Resources res) {
         final Paint paint = new Paint();
         paint.setStrokeWidth(4);
-        paint.setColor(ResourcesCompat.getColor(getResources(), R.color.config_activity_circle_border, null));
+        paint.setColor(ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null));
         paint.setAntiAlias(true);
         paint.setStyle(Paint.Style.STROKE);
         return paint;
 
     }
+
     private void scrollToSelected(String instrument,
                                   WearableRecyclerView view) {
         Log.d(TAG, "Scrolling to instrument /" + instrument + "/");
@@ -185,11 +197,10 @@ public class MusicWatchFaceConfigActivity extends Activity {
         MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, configKeysToOverwrite);
     }
 
-    private Bitmap buildBitmap(Context context, String instrument) throws SVGParseException {
-        final Resources r = getResources();
-        final int svgResourceId = r.getIdentifier(instrument + "_hand", "raw", context.getPackageName());
+    private static Bitmap buildBitmap(Resources res, Context context, String instrument) throws SVGParseException {
+        final int svgResourceId = res.getIdentifier(instrument + "_hand", "raw", context.getPackageName());
 
-        final SVG svg = SVG.getFromResource(r, svgResourceId);
+        final SVG svg = SVG.getFromResource(res, svgResourceId);
 
         // for vertical instruments, <1
         final float svgWHAspectRatio = svg.getDocumentAspectRatio();
@@ -201,7 +212,7 @@ public class MusicWatchFaceConfigActivity extends Activity {
                 " or may be " + (svgSize.x / svgSize.y) +
                 ", SVG: " + svgSize.x + ":" + svgSize.y);*/
         // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
-        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE/2f);
+        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE / 2f);
 
         final float scaledH = bmpSize.x * svgWHAspectRatio;
         //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
@@ -287,22 +298,14 @@ public class MusicWatchFaceConfigActivity extends Activity {
             }
 
             @Override
-            public String toString() { return mInstrumentId; }
+            public String toString() {
+                return mInstrumentId;
+            }
 
             private void setInstrumentId(String instrumentId) {
                 mInstrumentId = instrumentId;
 
                 Bitmap bmp = mBitmaps.get(instrumentId);
-                if (bmp == null) {
-                    try {
-                        Log.i(TAG, "The instrument bitmap was not built yet, building " + instrumentId);
-                        bmp = buildBitmap(mContext, instrumentId);
-                        mBitmaps.put(instrumentId, bmp);
-                    } catch (SVGParseException ex) {
-                        Log.e(TAG, "Could not build bitmap: " + ex);
-                        ex.printStackTrace();
-                    }
-                }
                 if (bmp != null) {
                     mInstrumentPreview.setImageBitmap(bmp);
                 } else {
@@ -338,16 +341,16 @@ public class MusicWatchFaceConfigActivity extends Activity {
             viewHolder.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                        updateConfigDataItem(mCurrentConfigKey, instr);
+                    updateConfigDataItem(mCurrentConfigKey, instr);
 
-                        if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-                            mHeader.setText(R.string.minutes);
-                            mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
-                            scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
-                        } else {
-                            finish();
-                        }
+                    if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
+                        mHeader.setText(R.string.minutes);
+                        mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
+                        scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
+                    } else {
+                        finish();
                     }
+                }
             });
 
             // Replaces content of view with correct element from data set

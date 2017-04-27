@@ -288,6 +288,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 ex.printStackTrace();
             }
             initFormats();
+
+            Log.d(TAG, "=== Loading all config bitmaps ===");
+            MusicWatchFaceConfigActivity.buildAllBitmaps(getResources(), getApplicationContext());
+            Log.d(TAG, "=== Done loading all config bitmaps ===");
         }
 
         private void initFormats() {
