@@ -39,7 +39,6 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.wearable.view.CurvedChildLayoutManager;
-import android.support.wearable.view.DefaultOffsettingHelper;
 import android.support.wearable.view.WearableRecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
