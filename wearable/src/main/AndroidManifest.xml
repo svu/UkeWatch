@@ -30,6 +30,9 @@
             <meta-data
                 android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
                 android:value="ie.udaltsoft.musicwatch.CONFIG" />
+            <meta-data
+                android:name="com.google.android.wearable.standalone"
+                android:value="true" />
             <intent-filter>
                 <action android:name="android.service.wallpaper.WallpaperService" />
 

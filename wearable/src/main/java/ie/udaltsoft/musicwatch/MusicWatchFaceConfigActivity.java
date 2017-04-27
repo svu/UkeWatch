@@ -38,15 +38,14 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
-import android.support.v7.widget.RecyclerView;
-import android.support.wearable.view.BoxInsetLayout;
-import android.support.wearable.view.WearableListView;
+import android.support.wearable.view.CurvedChildLayoutManager;
+import android.support.wearable.view.DefaultOffsettingHelper;
+import android.support.wearable.view.WearableRecyclerView;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowInsets;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.caverock.androidsvg.SVG;
@@ -62,17 +61,16 @@ import java.util.List;
 /**
  * Wearable config
  */
-public class MusicWatchFaceConfigActivity extends Activity implements
-        WearableListView.ClickListener, WearableListView.OnScrollListener {
+public class MusicWatchFaceConfigActivity extends Activity {
 
     private static final String TAG = "MusicWatchFaceConfig";
 
     private GoogleApiClient mGoogleApiClient;
-    private List<String> mAllInstruments;
+    private List<String> mAllInstrumentIds;
     private TextView mHeader;
-    private WearableListView mListView;
+    private WearableRecyclerView mListView;
 
-    private final HashMap<String, String> mInstruments = new HashMap<>();
+    private final HashMap<String, String> mSelectedInstruments = new HashMap<>();
     private String mCurrentConfigKey;
     private Paint mCircleBorderPaint;
     private final HashMap<String, Bitmap> mBitmaps = new HashMap<>();
@@ -88,7 +86,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
         mHeader = (TextView) findViewById(R.id.header);
 
-        mAllInstruments = Arrays.asList(getResources().getStringArray(R.array.all_instruments_array));
+        mAllInstrumentIds = Arrays.asList(getResources().getStringArray(R.array.all_instruments_array));
 
         mListView = preparePicker();
 
@@ -97,6 +95,7 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(Wearable.API).build();
 
+        Log.i(TAG, "=== LOADING INSTRUMENTS ===");
         MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
             @Override
             public void onConfigDataMapFetched(DataMap config) {
@@ -105,8 +104,8 @@ public class MusicWatchFaceConfigActivity extends Activity implements
                 final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
                         MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
                 Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
-                mInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
-                mInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
+                mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
+                mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
                 scrollToSelected(hi, mListView);
             }
         });
@@ -124,10 +123,13 @@ public class MusicWatchFaceConfigActivity extends Activity implements
 
     }
     private void scrollToSelected(String instrument,
-                                  WearableListView view) {
+                                  WearableRecyclerView view) {
+        Log.d(TAG, "Scrolling to instrument /" + instrument + "/");
+
         int idx = 0;
-        for (String i : mAllInstruments) {
+        for (String i : mAllInstrumentIds) {
             if (i.equals(instrument)) {
+                Log.d(TAG, "Scrolling to position /" + idx + "/");
                 view.scrollToPosition(idx);
                 break;
             }
@@ -136,28 +138,18 @@ public class MusicWatchFaceConfigActivity extends Activity implements
     }
 
     @NonNull
-    private WearableListView preparePicker() {
-        final WearableListView listView = (WearableListView) findViewById(R.id.instrument_picker);
-        BoxInsetLayout content = (BoxInsetLayout) findViewById(R.id.content);
-        // BoxInsetLayout adds padding by default on round devices. Add some on square devices.
-        content.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
-            @Override
-            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                if (!insets.isRound()) {
-                    v.setPaddingRelative(
-                            getResources().getDimensionPixelSize(R.dimen.config_content_padding_start),
-                            v.getPaddingTop(),
-                            v.getPaddingEnd(),
-                            v.getPaddingBottom());
-                }
-                return v.onApplyWindowInsets(insets);
-            }
-        });
+    private WearableRecyclerView preparePicker() {
+        final WearableRecyclerView listView = (WearableRecyclerView) findViewById(R.id.instrument_picker);
 
+        listView.setCenterEdgeItems(true);
+
+        listView.setLayoutManager(new CurvedChildLayoutManager(listView.getContext()));
+
+        // Improves performance because we know changes in content do not change the layout size of
+        // the RecyclerView.
         listView.setHasFixedSize(true);
-        listView.setClickListener(this);
-        listView.addOnScrollListener(this);
-        listView.setAdapter(new InstrumentListAdapter());
+
+        listView.setAdapter(new InstrumentAdapter(mAllInstrumentIds));
 
         return listView;
     }
@@ -176,51 +168,15 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         super.onStop();
     }
 
-    @Override // WearableListView.ClickListener
-    public void onClick(WearableListView.ViewHolder viewHolder) {
-        InstrumentItemViewHolder colorItemViewHolder = (InstrumentItemViewHolder) viewHolder;
-        updateConfigDataItem(mCurrentConfigKey, colorItemViewHolder.mColorItem.getInstrument());
-
-        if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-            mHeader.setText(R.string.minutes);
-            mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
-            scrollToSelected(mInstruments.get(mCurrentConfigKey), mListView);
-        } else {
-            finish();
-        }
-    }
-
-    @Override // WearableListView.ClickListener
-    public void onTopEmptyRegionClick() {
-    }
-
-    @Override // WearableListView.OnScrollListener
-    public void onScroll(int scroll) {
-    }
-
-    @Override // WearableListView.OnScrollListener
-    public void onAbsoluteScrollChange(int scroll) {
-        float newTranslation = Math.min(-scroll, 0);
-        mHeader.setTranslationY(newTranslation);
-    }
-
-    @Override // WearableListView.OnScrollListener
-    public void onScrollStateChanged(int scrollState) {
-    }
-
-    @Override // WearableListView.OnScrollListener
-    public void onCentralPositionChanged(int centralPosition) {
-    }
-
     private void updateConfigDataItem(String key, String value) {
         databaseList();
 
-        mInstruments.put(key, value);
+        mSelectedInstruments.put(key, value);
         DataMap configKeysToOverwrite = new DataMap();
         configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                mInstruments.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT));
+                mSelectedInstruments.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT));
         configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                mInstruments.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
+                mSelectedInstruments.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
 
         Log.i(TAG, "Instrument just overwritten from UI: " +
                 configKeysToOverwrite.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) +
@@ -306,141 +262,103 @@ public class MusicWatchFaceConfigActivity extends Activity implements
         return bmp;
     }
 
-    private class InstrumentListAdapter extends WearableListView.Adapter {
+    private class InstrumentAdapter extends
+            WearableRecyclerView.Adapter<InstrumentAdapter.ViewHolder> {
 
-        public InstrumentListAdapter() {
-        }
+        private static final String TAG = "InstrumentAdapter";
 
-        @Override
-        public InstrumentItemViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-            return new InstrumentItemViewHolder(new InstrumentItem(parent.getContext()));
-        }
+        private List<String> mInstrumentsList;
 
-        @Override
-        public void onBindViewHolder(WearableListView.ViewHolder holder, int position) {
-            InstrumentItemViewHolder colorItemViewHolder = (InstrumentItemViewHolder) holder;
-            colorItemViewHolder.mColorItem.setInstrument(mAllInstruments.get(position));
+        /**
+         * Provides reference to the views for each data item. We don't maintain a reference to the
+         * {@link ImageView} (representing the icon), because it does not change for each item. We
+         * wanted to keep the sample simple, but you could add extra code to customize each icon.
+         */
+        protected class ViewHolder extends WearableRecyclerView.ViewHolder {
 
-            RecyclerView.LayoutParams layoutParams =
-                    new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT);
+            private final ImageView mInstrumentPreview;
+            private final Context mContext;
 
-            int colorPickerItemMargin = (int) getResources()
-                    .getDimension(R.dimen.config_instrument_picker_item_margin);
-            // Add margins to first and last item to make it possible for user to tap on them.
-            if (position == 0) {
-                layoutParams.setMargins(0, colorPickerItemMargin, 0, 0);
-            } else if (position == mAllInstruments.size() - 1) {
-                layoutParams.setMargins(0, 0, 0, colorPickerItemMargin);
-            } else {
-                layoutParams.setMargins(0, 0, 0, 0);
+            private String mInstrumentId;
+
+            private ViewHolder(View view) {
+                super(view);
+                mInstrumentPreview = (ImageView) view.findViewById(R.id.instrument_preview);
+                mContext = view.getContext();
             }
-            colorItemViewHolder.itemView.setLayoutParams(layoutParams);
+
+            @Override
+            public String toString() { return mInstrumentId; }
+
+            private void setInstrumentId(String instrumentId) {
+                mInstrumentId = instrumentId;
+
+                Bitmap bmp = mBitmaps.get(instrumentId);
+                if (bmp == null) {
+                    try {
+                        Log.i(TAG, "The instrument bitmap was not built yet, building " + instrumentId);
+                        bmp = buildBitmap(mContext, instrumentId);
+                        mBitmaps.put(instrumentId, bmp);
+                    } catch (SVGParseException ex) {
+                        Log.e(TAG, "Could not build bitmap: " + ex);
+                        ex.printStackTrace();
+                    }
+                }
+                if (bmp != null) {
+                    mInstrumentPreview.setImageBitmap(bmp);
+                } else {
+                    Log.e(TAG, "Could not find bitmap for " + instrumentId);
+                }
+                mInstrumentPreview.setCropToPadding(false);
+                mInstrumentPreview.setAdjustViewBounds(true);
+                mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
+            }
+
+            private void setOnClickListener(View.OnClickListener listener) {
+                mInstrumentPreview.setOnClickListener(listener);
+            }
         }
 
+        private InstrumentAdapter(List<String> instruments) {
+            mInstrumentsList = instruments;
+        }
+
+        @Override
+        public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+            View view = LayoutInflater.from(viewGroup.getContext())
+                    .inflate(R.layout.instrument_picker_item, viewGroup, false);
+
+            return new ViewHolder(view);
+        }
+
+        @Override
+        public void onBindViewHolder(ViewHolder viewHolder, final int position) {
+            final String instr = mInstrumentsList.get(position);
+            Log.d(TAG, "Element " + position + " set: " + instr);
+
+            viewHolder.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                        updateConfigDataItem(mCurrentConfigKey, instr);
+
+                        if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
+                            mHeader.setText(R.string.minutes);
+                            mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
+                            scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
+                        } else {
+                            finish();
+                        }
+                    }
+            });
+
+            // Replaces content of view with correct element from data set
+            viewHolder.setInstrumentId(instr);
+        }
+
+        // Return the size of your dataset (invoked by the layout manager)
         @Override
         public int getItemCount() {
-            return mAllInstruments.size();
-        }
-    }
-
-    /**
-     * The layout of a instrument item.
-     */
-    private class InstrumentItem extends LinearLayout implements
-            WearableListView.OnCenterProximityListener {
-        /**
-         * The duration of the expand/shrink animation.
-         */
-        private static final int ANIMATION_DURATION_MS = 150;
-
-        private static final float SHRINK_PREVIEW_ALPHA = .5f;
-        private static final float EXPAND_PREVIEW_ALPHA = 1f;
-
-        private final ImageView mInstrumentPreview;
-
-        private final ObjectAnimator mExpandPreviewAnimator;
-
-        private final ObjectAnimator mShrinkPreviewAnimator;
-
-        private String mInstrument;
-
-        public InstrumentItem(Context context) {
-            super(context);
-            View.inflate(context, R.layout.instrument_picker_item, this);
-
-            mInstrumentPreview = (ImageView) findViewById(R.id.instrument_preview);
-
-            mShrinkPreviewAnimator = ObjectAnimator.ofFloat(mInstrumentPreview, "alpha",
-                    EXPAND_PREVIEW_ALPHA, SHRINK_PREVIEW_ALPHA).setDuration(ANIMATION_DURATION_MS);
-
-            mExpandPreviewAnimator = ObjectAnimator.ofFloat(mInstrumentPreview, "alpha",
-                    SHRINK_PREVIEW_ALPHA, EXPAND_PREVIEW_ALPHA).setDuration(ANIMATION_DURATION_MS);
-        }
-
-        @Override
-        public void onCenterPosition(boolean animate) {
-            if (animate) {
-                mShrinkPreviewAnimator.cancel();
-                if (!mExpandPreviewAnimator.isRunning()) {
-                    mExpandPreviewAnimator.setFloatValues(mInstrumentPreview.getAlpha(), EXPAND_PREVIEW_ALPHA);
-                    mExpandPreviewAnimator.start();
-                }
-            } else {
-                mExpandPreviewAnimator.cancel();
-                mInstrumentPreview.setAlpha(EXPAND_PREVIEW_ALPHA);
-            }
-        }
-
-        @Override
-        public void onNonCenterPosition(boolean animate) {
-            if (animate) {
-                mExpandPreviewAnimator.cancel();
-                if (!mShrinkPreviewAnimator.isRunning()) {
-                    mShrinkPreviewAnimator.setFloatValues(mInstrumentPreview.getAlpha(), SHRINK_PREVIEW_ALPHA);
-                    mShrinkPreviewAnimator.start();
-                }
-            } else {
-                mShrinkPreviewAnimator.cancel();
-                mInstrumentPreview.setAlpha(SHRINK_PREVIEW_ALPHA);
-            }
-        }
-
-        private void setInstrument(String instrument) {
-            mInstrument = instrument;
-
-            Bitmap bmp = mBitmaps.get(instrument);
-            if (bmp == null) {
-                try {
-                    Log.i(TAG, "The instrument bitmap was not built yet, building " + instrument);
-                    bmp = buildBitmap(getContext(), instrument);
-                    mBitmaps.put(instrument, bmp);
-                } catch (SVGParseException ex) {
-                    Log.e(TAG, "Could not build bitmap: " + ex);
-                    ex.printStackTrace();
-                }
-            }
-            if (bmp != null) {
-                mInstrumentPreview.setImageBitmap(bmp);
-            } else {
-                Log.e(TAG, "Could not find bitmap for " + instrument);
-            }
-            mInstrumentPreview.setCropToPadding(false);
-            mInstrumentPreview.setAdjustViewBounds(true);
-            mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
-        }
-
-        private String getInstrument() {
-            return mInstrument;
-        }
-    }
-
-    private static class InstrumentItemViewHolder extends WearableListView.ViewHolder {
-        private final InstrumentItem mColorItem;
-
-        public InstrumentItemViewHolder(InstrumentItem colorItem) {
-            super(colorItem);
-            mColorItem = colorItem;
+            return mInstrumentsList.size();
         }
     }
 }

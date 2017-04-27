@@ -13,33 +13,32 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<android.support.wearable.view.BoxInsetLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:id="@+id/content"
+
+<FrameLayout
+xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools"
+android:id="@+id/content"
+android:layout_width="match_parent"
+android:layout_height="match_parent"
+tools:context="ie.udaltsoft.musicwatch.MusicWatchFaceConfigActivity">
+
+<android.support.wearable.view.WearableRecyclerView
+    android:id="@+id/instrument_picker"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/config_activity_background"
-    >
-    <TextView
-        android:id="@+id/header"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginLeft="16dp"
-        android:layout_marginRight="16dp"
-        android:layout_marginTop="4dp"
-        android:textSize="20sp"
-        android:textAlignment="center"
-        android:textColor="@color/config_activity_header_text_color"
-        android:background="@android:color/transparent"
-        android:text="@string/hours"
-        android:fontFamily="sans-serif-condensed-light"
-        android:gravity="center_horizontal"
-        app:layout_box="top"/>
-    <android.support.wearable.view.WearableListView
-        android:id="@+id/instrument_picker"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:gravity="center_horizontal"
-        app:layout_box="bottom"/>
-</android.support.wearable.view.BoxInsetLayout>
+    android:scrollbars="vertical"
+    android:padding="0dp"/>
+
+<TextView
+    android:id="@+id/header"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:textAlignment="center"
+    android:gravity="center_horizontal|center_vertical"
+    android:textColor="@color/config_activity_header_text_color"
+    android:paddingTop="@dimen/activity_main_text_header_spacing"
+    android:paddingBottom="@dimen/activity_main_text_header_spacing"
+    android:background="@color/config_activity_header_background_color"
+    android:text="@string/hours"/>
+
+</FrameLayout>
