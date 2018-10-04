@@ -1,12 +1,17 @@
 apply plugin: 'com.android.application'
 
+repositories {
+    jcenter()
+    google()
+}
+
 android {
-    compileSdkVersion 25
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 26
+    buildToolsVersion '28.0.2'
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdkVersion 25
-        targetSdkVersion 25
+        minSdkVersion 24
+        targetSdkVersion 26
         versionCode 18
         versionName '1.8'
     }
@@ -25,9 +30,11 @@ android {
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.google.android.support:wearable:2.0.1'
-    provided 'com.google.android.wearable:wearable:2.0.1'
-    compile 'com.google.android.gms:play-services-wearable:9.6.0'
-    compile files('../libs/androidsvg-1.2.1.jar')
+    api fileTree(include: ['*.jar'], dir: 'libs')
+    api files('../libs/androidsvg-1.2.1.jar')
+    implementation 'com.android.support:wear:27.1.1'
+    implementation 'com.google.android.gms:play-services-wearable:16.0.1'
+    implementation 'com.android.support:support-v13:27.1.1'
+    compileOnly 'com.google.android.wearable:wearable:2.3.0'
+    implementation 'com.google.android.support:wearable:2.3.0'
 }
