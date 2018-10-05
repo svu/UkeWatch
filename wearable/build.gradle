@@ -6,6 +6,7 @@ android {
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
         minSdkVersion 24
+        //noinspection OldTargetApi
         targetSdkVersion 26
         versionCode 18
         versionName '1.8'

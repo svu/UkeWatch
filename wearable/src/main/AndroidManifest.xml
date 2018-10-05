@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="ie.udaltsoft.musicwatch" >
+    xmlns:tools="http://schemas.android.com/tools"
+    package="ie.udaltsoft.musicwatch"
+    tools:ignore="GoogleAppIndexingWarning">
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -53,6 +55,9 @@
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
     </application>
 
 </manifest>
