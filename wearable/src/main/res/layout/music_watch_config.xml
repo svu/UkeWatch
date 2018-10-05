@@ -14,7 +14,7 @@
  limitations under the License.
 -->
 
-<FrameLayout
+<merge
 xmlns:android="http://schemas.android.com/apk/res/android"
 xmlns:tools="http://schemas.android.com/tools"
 android:id="@+id/content"
@@ -41,4 +41,4 @@ tools:context="ie.udaltsoft.musicwatch.MusicWatchFaceConfigActivity">
     android:background="@color/config_activity_header_background_color"
     android:text="@string/hours"/>
 
-</FrameLayout>
+</merge>
