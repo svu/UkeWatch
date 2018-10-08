@@ -15,7 +15,8 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault"
-        android:fullBackupContent="@xml/music_watch_face_backup">
+        android:fullBackupContent="@xml/music_watch_face_backup"
+        android:supportsRtl="true">
         <service
             android:name=".MusicWatchFace"
             android:label="@string/visible_watch_name"
