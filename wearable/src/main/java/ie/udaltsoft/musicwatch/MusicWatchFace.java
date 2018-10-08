@@ -52,15 +52,12 @@ import android.view.WindowInsets;
 
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.wearable.DataClient;
 import com.google.android.gms.wearable.DataEvent;
 import com.google.android.gms.wearable.DataEventBuffer;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.Wearable;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -90,9 +87,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
     }
 
     private class Engine extends CanvasWatchFaceService.Engine
-            implements GoogleApiClient.ConnectionCallbacks,
-            GoogleApiClient.OnConnectionFailedListener,
-            DataApi.DataListener {
+            implements DataClient.OnDataChangedListener {
         static final int MSG_UPDATE_TIME = 0;
 
         // Hands
@@ -129,39 +124,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 300 * Math.PI / 180,
                 330 * Math.PI / 180
         };
-
-        private final GoogleApiClient mGoogleApiClient;
-
-        Paint mBackgroundPaint;
-        Paint mBackgroundPaintAmbient;
-        Paint mStaffPaint;
-
-        Paint mHandPaint;
-        boolean mAmbient;
-        GregorianCalendar mTime;
-
-        PointF center;
-
-        float secLength;
-
-        private SVG hourHandSvg;
-        private SVG minuteHandSvg;
-        private SVG ambientHourHandSvg;
-        private SVG ambientMinuteHandSvg;
-
-        private PointF hourRotationPoint;
-        private PointF minuteRotationPoint;
-
-        private PointF markBounds;
-        private PointF mark12Bounds;
-        private PointF markHourBounds;
-        private PointF markNoteBounds;
-
-        private RectF hourHandRect;
-        private RectF minuteHandRect;
-
-        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
-
         /**
          * Handler to update the time once a second in interactive mode.
          */
@@ -182,15 +144,51 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 }
             }
         };
-
+        Paint mBackgroundPaint;
+        Paint mBackgroundPaintAmbient;
+        Paint mStaffPaint;
+        Paint mHandPaint;
+        boolean mAmbient;
+        GregorianCalendar mTime;
         final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 mTime.setTimeZone(TimeZone.getTimeZone(intent.getStringExtra("time-zone")));
             }
         };
+        PointF center;
+        float secLength;
         boolean mRegisteredTimeZoneReceiver = false;
-
+        /**
+         * Whether the display supports fewer bits for each color in ambient mode. When true, we
+         * disable anti-aliasing in ambient mode.
+         */
+        boolean mLowBitAmbient;
+        private SVG hourHandSvg;
+        private SVG minuteHandSvg;
+        private SVG ambientHourHandSvg;
+        private SVG ambientMinuteHandSvg;
+        private PointF hourRotationPoint;
+        private PointF minuteRotationPoint;
+        private PointF markBounds;
+        private PointF mark12Bounds;
+        private PointF markHourBounds;
+        private PointF markNoteBounds;
+        private RectF hourHandRect;
+        private RectF minuteHandRect;
+        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
+        private SVG threeOCSvg;
+        private SVG sixOCSvg;
+        private SVG nineOCSvg;
+        private SVG twelveOCSvg;
+        private SVG hourSvg;
+        private SVG noteSvg;
+        private float[] scales;
+        private Bitmap[] majorBitmap;
+        private PointF[] markHourLocations;
+        private boolean isRound;
+        private float batteryPct;
+        private IntentFilter batFilter;
         final BroadcastReceiver mBatteryReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -203,38 +201,11 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 }
             }
         };
-
-        /**
-         * Whether the display supports fewer bits for each color in ambient mode. When true, we
-         * disable anti-aliasing in ambient mode.
-         */
-        boolean mLowBitAmbient;
-
-        private SVG threeOCSvg;
-        private SVG sixOCSvg;
-        private SVG nineOCSvg;
-        private SVG twelveOCSvg;
-
-        private SVG hourSvg;
-        private SVG noteSvg;
-
-        private float[] scales;
-        private Bitmap[] majorBitmap;
-        private PointF[] markHourLocations;
-        private boolean isRound;
-        private float batteryPct;
-
-        private IntentFilter batFilter;
         private IntentFilter tzFilter;
         private String mHourInstrument;
         private String mMinuteInstrument;
 
         private Engine() {
-            mGoogleApiClient = new GoogleApiClient.Builder(MusicWatchFace.this)
-                    .addConnectionCallbacks(this)
-                    .addOnConnectionFailedListener(this)
-                    .addApi(Wearable.API)
-                    .build();
         }
 
         @Override
@@ -292,6 +263,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             Log.d(TAG, "=== Loading all config bitmaps ===");
             MusicWatchFaceConfigActivity.buildAllBitmaps(getResources(), getApplicationContext());
             Log.d(TAG, "=== Done loading all config bitmaps ===");
+
+            MusicWatchFaceUtil.addDataListener(getApplicationContext(), this);
+            updateConfigDataItemAndUiOnStartup();
         }
 
         private void initFormats() {
@@ -321,6 +295,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         @Override
         public void onDestroy() {
             mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
+            MusicWatchFaceUtil.removeDataListener(getApplicationContext(), this);
             super.onDestroy();
         }
 
@@ -502,8 +477,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             super.onVisibilityChanged(visible);
 
             if (visible) {
-                mGoogleApiClient.connect();
-
                 registerReceivers();
 
                 mTime.setTimeZone(TimeZone.getDefault());
@@ -511,11 +484,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 initFormats();
             } else {
                 unregisterReceivers();
-
-                if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-                    Wearable.DataApi.removeListener(mGoogleApiClient, this);
-                    mGoogleApiClient.disconnect();
-                }
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -607,7 +575,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
         private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedY) {
             scales[idx] = isForcedY ? bounds.y / svg.getDocumentHeight() :
-                            Math.min(bounds.x / svg.getDocumentWidth(), bounds.y / svg.getDocumentHeight());
+                    Math.min(bounds.x / svg.getDocumentWidth(), bounds.y / svg.getDocumentHeight());
 
             majorBitmap[idx] = Bitmap.createBitmap(Math.round(svg.getDocumentWidth() * scales[idx]),
                     Math.round(svg.getDocumentHeight() * scales[idx]),
@@ -627,7 +595,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void updateConfigDataItemAndUiOnStartup() {
-            MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient,
+            MusicWatchFaceUtil.fetchConfigDataMap(getApplicationContext(),
                     new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
                         @Override
                         public void onConfigDataMapFetched(DataMap startupConfig) {
@@ -636,14 +604,15 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
                             final String initialHourInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT);
                             final String initialMinuteInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT);
-                            Log.d(TAG, "Fetched startup config: " + initialHourInstrument + "/" + initialMinuteInstrument);
+                            Log.d(TAG, "!!!!!! Fetched startup config: " + initialHourInstrument + "/" + initialMinuteInstrument);
                             MusicWatchFaceUtil.setDefaultValuesForMissingConfigKeys(startupConfig);
 
                             if (initialHourInstrument == null || initialMinuteInstrument == null) {
                                 Log.d(TAG, "Completing config initialization with: " +
                                         startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" +
                                         startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
-                                MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, startupConfig);
+                                MusicWatchFaceUtil.putConfigDataItem(getApplicationContext(),
+                                        startupConfig);
                             }
 
                             updateUiForConfigDataMap(startupConfig);
@@ -700,7 +669,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         @Override
-        public void onDataChanged(DataEventBuffer dataEvents) {
+        public void onDataChanged(@NonNull DataEventBuffer dataEvents) {
+            Log.d(TAG, "onDataChanged: " + dataEvents);
+
             for (DataEvent dataEvent : dataEvents) {
                 if (dataEvent.getType() != DataEvent.TYPE_CHANGED) {
                     continue;
@@ -717,20 +688,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
                 updateUiForConfigDataMap(config);
             }
-        }
-
-        @Override
-        public void onConnected(Bundle connectionHint) {
-            Wearable.DataApi.addListener(mGoogleApiClient, this);
-            updateConfigDataItemAndUiOnStartup();
-        }
-
-        @Override
-        public void onConnectionSuspended(int cause) {
-        }
-
-        @Override
-        public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
         }
     }
 }

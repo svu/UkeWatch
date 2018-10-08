@@ -37,8 +37,8 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.content.res.ResourcesCompat;
-import android.support.wearable.view.CurvedChildLayoutManager;
-import android.support.wearable.view.WearableRecyclerView;
+import android.support.wear.widget.WearableLinearLayoutManager;
+import android.support.wear.widget.WearableRecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -48,9 +48,7 @@ import android.widget.TextView;
 
 import com.caverock.androidsvg.SVG;
 import com.caverock.androidsvg.SVGParseException;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.Wearable;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -63,7 +61,6 @@ public class MusicWatchFaceConfigActivity extends Activity {
 
     private static final String TAG = "MusicWatchFaceConfig";
 
-    private GoogleApiClient mGoogleApiClient;
     private TextView mHeader;
     private WearableRecyclerView mListView;
 
@@ -77,40 +74,45 @@ public class MusicWatchFaceConfigActivity extends Activity {
     private static final float MAX_BMP_SIZE = 150;
     private static final float REDUCED_INSTRUMENT_RATIO = 0.5f;
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.music_watch_config);
 
-        mHeader = (TextView) findViewById(R.id.header);
+        mHeader = findViewById(R.id.header);
 
         mListView = preparePicker();
 
         mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT;
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addApi(Wearable.API).build();
+        MusicWatchFaceUtil.fetchConfigDataMap(getApplicationContext(),
+                new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
+                    @Override
+                    public void onConfigDataMapFetched(DataMap config) {
+                        final String hi = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                        final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
+                                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                        Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
+                        mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
+                        mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
+                        scrollToSelected(hi, mListView);
+                    }
+                });
+    }
 
-        MusicWatchFaceUtil.fetchConfigDataMap(mGoogleApiClient, new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
-            @Override
-            public void onConfigDataMapFetched(DataMap config) {
-                final String hi = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                        MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                        MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
-                mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
-                mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
-                scrollToSelected(hi, mListView);
-            }
-        });
+    private static void initAllInstrumentIds(Resources res) {
+        if (mAllInstrumentIds == null) {
+            mAllInstrumentIds = Arrays.asList(res.getStringArray(R.array.all_instruments_array));
+            Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size());
+        }
     }
 
     public static void buildAllBitmaps(Resources res, Context context) {
         mCircleBorderPaint = createBorderPaint(res);
 
-        mAllInstrumentIds = Arrays.asList(res.getStringArray(R.array.all_instruments_array));
+        initAllInstrumentIds(res);
+
         for (String instrumentId : mAllInstrumentIds) {
             try {
                 Log.i(TAG, "The instrument bitmap was not built yet, building " + instrumentId);
@@ -150,33 +152,21 @@ public class MusicWatchFaceConfigActivity extends Activity {
 
     @NonNull
     private WearableRecyclerView preparePicker() {
-        final WearableRecyclerView listView = (WearableRecyclerView) findViewById(R.id.instrument_picker);
+        final WearableRecyclerView listView = findViewById(R.id.instrument_picker);
 
-        listView.setCenterEdgeItems(true);
+        listView.setLayoutManager(new WearableLinearLayoutManager(listView.getContext()));
 
-        listView.setLayoutManager(new CurvedChildLayoutManager(listView.getContext()));
+        listView.setEdgeItemsCenteringEnabled(true);
 
         // Improves performance because we know changes in content do not change the layout size of
         // the RecyclerView.
         listView.setHasFixedSize(true);
 
+        initAllInstrumentIds(getResources());
+
         listView.setAdapter(new InstrumentAdapter(mAllInstrumentIds));
 
         return listView;
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        mGoogleApiClient.connect();
-    }
-
-    @Override
-    protected void onStop() {
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            mGoogleApiClient.disconnect();
-        }
-        super.onStop();
     }
 
     private void updateConfigDataItem(String key, String value) {
@@ -194,7 +184,7 @@ public class MusicWatchFaceConfigActivity extends Activity {
                 "/" +
                 configKeysToOverwrite.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
 
-        MusicWatchFaceUtil.putConfigDataItem(mGoogleApiClient, configKeysToOverwrite);
+        MusicWatchFaceUtil.putConfigDataItem(getApplicationContext(), configKeysToOverwrite);
     }
 
     private static Bitmap buildBitmap(Resources res, Context context, String instrument) throws SVGParseException {
@@ -277,7 +267,7 @@ public class MusicWatchFaceConfigActivity extends Activity {
 
         private static final String TAG = "InstrumentAdapter";
 
-        private List<String> mInstrumentsList;
+        private final List<String> mInstrumentsList;
 
         /**
          * Provides reference to the views for each data item. We don't maintain a reference to the
@@ -287,14 +277,12 @@ public class MusicWatchFaceConfigActivity extends Activity {
         protected class ViewHolder extends WearableRecyclerView.ViewHolder {
 
             private final ImageView mInstrumentPreview;
-            private final Context mContext;
 
             private String mInstrumentId;
 
             private ViewHolder(View view) {
                 super(view);
-                mInstrumentPreview = (ImageView) view.findViewById(R.id.instrument_preview);
-                mContext = view.getContext();
+                mInstrumentPreview = view.findViewById(R.id.instrument_preview);
             }
 
             @Override
@@ -325,8 +313,9 @@ public class MusicWatchFaceConfigActivity extends Activity {
             mInstrumentsList = instruments;
         }
 
+        @NonNull
         @Override
-        public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int viewType) {
+        public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
             View view = LayoutInflater.from(viewGroup.getContext())
                     .inflate(R.layout.instrument_picker_item, viewGroup, false);
 
@@ -334,7 +323,7 @@ public class MusicWatchFaceConfigActivity extends Activity {
         }
 
         @Override
-        public void onBindViewHolder(ViewHolder viewHolder, final int position) {
+        public void onBindViewHolder(@NonNull ViewHolder viewHolder, final int position) {
             final String instr = mInstrumentsList.get(position);
             Log.d(TAG, "Element " + position + " set: " + instr);
 

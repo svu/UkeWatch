@@ -26,17 +26,18 @@
 
 package ie.udaltsoft.musicwatch;
 
+import android.content.Context;
 import android.net.Uri;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.common.api.ResultCallback;
-import com.google.android.gms.wearable.DataApi;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
+import com.google.android.gms.wearable.DataClient;
 import com.google.android.gms.wearable.DataItem;
 import com.google.android.gms.wearable.DataMap;
 import com.google.android.gms.wearable.DataMapItem;
-import com.google.android.gms.wearable.NodeApi;
+import com.google.android.gms.wearable.Node;
+import com.google.android.gms.wearable.NodeClient;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.Wearable;
 
@@ -59,23 +60,26 @@ public final class MusicWatchFaceUtil {
         void onConfigDataMapFetched(DataMap config);
     }
 
-    public static void fetchConfigDataMap(final GoogleApiClient client,
+    public static void fetchConfigDataMap(final Context context,
                                           final FetchConfigDataMapCallback callback) {
-        Wearable.NodeApi.getLocalNode(client).setResultCallback(
-                new ResultCallback<NodeApi.GetLocalNodeResult>() {
-                    @Override
-                    public void onResult(@NonNull NodeApi.GetLocalNodeResult getLocalNodeResult) {
-                        String localNode = getLocalNodeResult.getNode().getId();
-                        Uri uri = new Uri.Builder()
-                                .scheme("wear")
-                                .path(MusicWatchFaceUtil.PATH_WITH_FEATURE)
-                                .authority(localNode)
-                                .build();
-                        Wearable.DataApi.getDataItem(client, uri)
-                                .setResultCallback(new DataItemResultCallback(callback));
-                    }
-                }
-        );
+        Log.d(TAG, "fetchConfigDataMap: " + context);
+
+        final DataClient dataClient = Wearable.getDataClient(context);
+        final NodeClient nodeClient = Wearable.getNodeClient(context);
+        final Task<Node> task = nodeClient.getLocalNode();
+        task.addOnSuccessListener(new OnSuccessListener<Node>() {
+            @Override
+            public void onSuccess(Node result) {
+                String localNode = result.getId();
+                Uri uri = new Uri.Builder()
+                        .scheme("wear")
+                        .path(PATH_WITH_FEATURE)
+                        .authority(localNode)
+                        .build();
+                final Task<DataItem> diTask = dataClient.getDataItem(uri);
+                diTask.addOnSuccessListener(new DataItemSuccessCallback(callback));
+            }
+        });
     }
 
     public static void setDefaultValuesForMissingConfigKeys(DataMap config) {
@@ -88,44 +92,59 @@ public final class MusicWatchFaceUtil {
     }
 
 
-    public static void putConfigDataItem(GoogleApiClient googleApiClient, DataMap newConfig) {
-        PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE);
-        DataMap configToPut = putDataMapRequest.getDataMap();
+    public static void putConfigDataItem(Context context, DataMap newConfig) {
+        final DataClient dataClient = Wearable.getDataClient(context);
+        final PutDataMapRequest putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE);
+        final DataMap configToPut = putDataMapRequest.getDataMap();
         configToPut.putAll(newConfig);
         Log.i(TAG, "Instruments to be put as data item: " +
                 configToPut.getString(KEY_HOUR_INSTRUMENT) +
                 "/" +
-                configToPut.getString(KEY_MINUTE_INSTRUMENT));
-        Wearable.DataApi.putDataItem(googleApiClient, putDataMapRequest.asPutDataRequest())
-                .setResultCallback(new ResultCallback<DataApi.DataItemResult>() {
+                configToPut.getString(KEY_MINUTE_INSTRUMENT) + " to " + dataClient.getInstanceId());
+        dataClient.putDataItem(putDataMapRequest.asPutDataRequest())
+                .addOnSuccessListener(new OnSuccessListener<DataItem>() {
                     @Override
-                    public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
-                        Log.d(TAG, "putDataItem result status: " + dataItemResult.getStatus());
+                    public void onSuccess(DataItem dataItem) {
+                        Log.d(TAG, "putDataItem.onSuccess: " + dataItem);
                     }
                 });
     }
 
-    private static class DataItemResultCallback implements ResultCallback<DataApi.DataItemResult> {
+    private static class DataItemSuccessCallback implements OnSuccessListener<DataItem> {
 
         private final FetchConfigDataMapCallback mCallback;
 
-        public DataItemResultCallback(FetchConfigDataMapCallback callback) {
+        DataItemSuccessCallback(FetchConfigDataMapCallback callback) {
             mCallback = callback;
         }
 
         @Override
-        public void onResult(@NonNull DataApi.DataItemResult dataItemResult) {
-            if (dataItemResult.getStatus().isSuccess()) {
-                if (dataItemResult.getDataItem() != null) {
-                    DataItem configDataItem = dataItemResult.getDataItem();
-                    DataMapItem dataMapItem = DataMapItem.fromDataItem(configDataItem);
-                    DataMap config = dataMapItem.getDataMap();
-                    mCallback.onConfigDataMapFetched(config);
-                } else {
-                    mCallback.onConfigDataMapFetched(new DataMap());
-                }
+        public void onSuccess(DataItem configDataItem) {
+            Log.d(TAG, "DataItemSuccessCallback.onSuccess: " + configDataItem);
+            if (configDataItem != null) {
+                final DataMapItem dataMapItem = DataMapItem.fromDataItem(configDataItem);
+                final DataMap config = dataMapItem.getDataMap();
+                mCallback.onConfigDataMapFetched(config);
+            } else {
+                mCallback.onConfigDataMapFetched(new DataMap());
             }
         }
+    }
+
+    public static void addDataListener(Context context, DataClient.OnDataChangedListener listener) {
+        final DataClient dataClient = Wearable.getDataClient(context);
+        final Uri uri = new Uri.Builder()
+                .scheme("wear")
+                .path(MusicWatchFaceUtil.PATH_WITH_FEATURE)
+                .build();
+        Log.d(TAG, "<<< Adding listener to data client: " + uri);
+        dataClient.addListener(listener, uri, DataClient.FILTER_PREFIX);
+    }
+
+    public static void removeDataListener(Context context, DataClient.OnDataChangedListener listener) {
+        final DataClient dataClient = Wearable.getDataClient(context);
+        Log.d(TAG, ">>> Removing listener from data client");
+        dataClient.removeListener(listener);
     }
 
     private MusicWatchFaceUtil() {
