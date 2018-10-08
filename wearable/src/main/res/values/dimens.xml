@@ -3,8 +3,6 @@
     <dimen name="analog_hand_stroke">3dp</dimen>
     <dimen name="staff_stroke">1dp</dimen>
 
-    <dimen name="config_instrument_picker_item_margin">0dp</dimen>
-
     <dimen name="config_row_padding">0dp</dimen>
 
     <dimen name="activity_main_text_header_spacing">5dp</dimen>

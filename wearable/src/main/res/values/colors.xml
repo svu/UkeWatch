@@ -3,7 +3,6 @@
     <color name="analog_background_ambient">#000000</color>
     <color name="analog_hands">#cccccc</color>
     <color name="analog_background">#000000</color>
-    <color name="config_activity_background">#000000</color>
     <color name="config_activity_header_text_color">#F0F0F0F0</color>
     <color name="config_activity_header_background_color">#959595</color>
     <color name="config_activity_circle_border">#404040</color>
