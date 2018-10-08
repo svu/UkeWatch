@@ -7,15 +7,14 @@
 
     <string name="instrument_wood_uke" translatable="false">wood_uke</string>
     <string name="instrument_pink_uke" translatable="false">pink_uke</string>
-
     <string name="instrument_violin" translatable="false">violin</string>
     <string name="instrument_bow" translatable="false">bow</string>
-
     <string name="instrument_les_paul" translatable="false">les_paul</string>
     <string name="instrument_gibson_flying_v" translatable="false">gibson_flying_v</string>
-
     <string name="instrument_saxophone" translatable="false">saxophone</string>
     <string name="instrument_oboe" translatable="false">oboe</string>
+    <string name="instrument_celtic_harp" translatable="false">celtic_harp</string>
+
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>
 
@@ -28,6 +27,7 @@
         <item>@string/instrument_gibson_flying_v</item>
         <item>@string/instrument_saxophone</item>
         <item>@string/instrument_oboe</item>
+        <item>@string/instrument_celtic_harp</item>
     </string-array>
 
 </resources>
