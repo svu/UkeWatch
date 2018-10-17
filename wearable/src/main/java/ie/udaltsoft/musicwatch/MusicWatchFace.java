@@ -185,7 +185,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private SVG noteSvg;
         private float[] scales;
         private Bitmap[] majorBitmap;
-        private PointF[] markHourLocations;
         private boolean isRound;
         private float batteryPct;
         private IntentFilter batFilter;
@@ -204,6 +203,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private IntentFilter tzFilter;
         private String mHourInstrument;
         private String mMinuteInstrument;
+
+        private Bitmap ambientBaseBitmap;
+        private Bitmap normalBaseBitmap;
 
         private Engine() {
         }
@@ -289,7 +291,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         @Override
         public void onApplyWindowInsets(WindowInsets wi) {
             isRound = wi.isRound();
-            markHourLocations = null;
+            ambientBaseBitmap = null;
+            normalBaseBitmap = null;
         }
 
         @Override
@@ -327,21 +330,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             updateTimer();
         }
 
-        @Override
-        public void onDraw(Canvas canvas, Rect bounds) {
-            Date now = new Date();
-            //now.setHours(19);now.setMinutes(50);
-            mTime.setTime(now);
-
-            // Draw the background.
-            if (mAmbient)
-                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaintAmbient);
-            else
-                canvas.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
-
-            // Find the center. Ignore the window insets so that, on round watches with a
-            // "chin", the watch face is centered on the entire screen, not just the usable
-            // portion.
+        // Draw hours
+        private void draw12369(Canvas canvas) {
             // 12
             canvas.drawBitmap(majorBitmap[0],
                     center.x - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
@@ -365,20 +355,45 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     center.x * MARK_OFFSET_RATIO,
                     center.y - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
                     null);
+        }
+
+        @Override
+        public void onDraw(Canvas canvas, Rect bounds) {
+            Date now = new Date();
+            //now.setHours(19);now.setMinutes(50);
+            mTime.setTime(now);
+
+            if (mAmbient) {
+                if (ambientBaseBitmap == null) {
+                    Log.d(TAG, "Creating ambient base bitmap");
+                    ambientBaseBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+                    final Canvas abc = new Canvas(ambientBaseBitmap);
+                    abc.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaintAmbient);
+                    draw12369(abc);
+                }
+                canvas.drawBitmap(ambientBaseBitmap, 0f, 0f, null);
+            } else {
+                if (normalBaseBitmap == null) {
+                    Log.d(TAG, "Creating normal base bitmap");
+                    normalBaseBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+                    final Canvas nbc = new Canvas(normalBaseBitmap);
+                    nbc.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
+                    draw12369(nbc);
+
+                    final PointF[] markHourLocations = calcMarkHourLocations(majorBitmap[4]);
+
+                    for (PointF markHourLocation : markHourLocations) {
+                        nbc.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
+                    }
+                    displayBatteryStaff(nbc);
+                }
+                canvas.drawBitmap(normalBaseBitmap, 0f, 0f, null);
+            }
 
             displayDate(canvas, now);
 
             if (!mAmbient) {
                 displayBattery(canvas);
-
-                // delayed calculation
-                if (markHourLocations == null) {
-                    calcMarkHourLocations(majorBitmap[4]);
-                }
-
-                for (PointF markHourLocation : markHourLocations) {
-                    canvas.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
-                }
 
                 // second hand
                 float secRot = mTime.get(GregorianCalendar.SECOND) / 30f * (float) Math.PI;
@@ -448,13 +463,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     center.y * 3 / 2 + bounds.height() / 2f, mHandPaint);
         }
 
-        private void displayBattery(Canvas canvas) {
-            final Bitmap noteBmp = majorBitmap[5];
-
+        private void displayBatteryStaff(Canvas canvas) {
             final float xmin = center.x * (1 + STAFF_X_RATIO_START);
             final float xmax = center.x * (1 + STAFF_X_RATIO_END);
             final float ymin = center.y * STAFF_Y_RATIO_START;
-            final float ymax = center.y * STAFF_Y_RATIO_END;
             float ycur = ymin;
             final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
             for (int i = 0; i < 5; i++) {
@@ -465,6 +477,15 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                         mStaffPaint);
                 ycur += ystep;
             }
+        }
+
+        private void displayBattery(Canvas canvas) {
+            final Bitmap noteBmp = majorBitmap[5];
+
+            final float xmin = center.x * (1 + STAFF_X_RATIO_START);
+            final float xmax = center.x * (1 + STAFF_X_RATIO_END);
+            final float ymax = center.y * STAFF_Y_RATIO_END;
+            final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
             final int watchBatteryNoteLevel = (int) Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
@@ -547,7 +568,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
 
             createBitmapsFromSvgs();
 
-            markHourLocations = null;
+            ambientBaseBitmap = null;
+            normalBaseBitmap = null;
         }
 
         private void createBitmapsFromSvgs() {
@@ -562,8 +584,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             createBitmapFromSvg(noteSvg, markNoteBounds, 5, true);
         }
 
-        private void calcMarkHourLocations(Bitmap bitmap) {
-            markHourLocations = new PointF[8];
+        private PointF[] calcMarkHourLocations(Bitmap bitmap) {
+            final PointF[] markHourLocations = new PointF[8];
             final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
             final float offset = 1 - hourRatio - MARK_OFFSET_RATIO;
             final PointF halfSize = new PointF(bitmap.getWidth() / 2f, bitmap.getHeight() / 2f);
@@ -571,6 +593,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGLES[i]) * offset) - halfSize.x,
                         center.y * (float) (1 - Math.cos(HOUR_ANGLES[i]) * offset) - halfSize.y);
             }
+            return markHourLocations;
         }
 
         private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedY) {
