@@ -150,12 +150,15 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         Paint mHandPaint;
         boolean mAmbient;
         GregorianCalendar mTime;
-        final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
+
+        private IntentFilter tzFilter;
+        private final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 mTime.setTimeZone(TimeZone.getTimeZone(intent.getStringExtra("time-zone")));
             }
         };
+
         PointF center;
         float secLength;
         boolean mRegisteredTimeZoneReceiver = false;
@@ -163,7 +166,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
          */
-        boolean mLowBitAmbient;
+        private boolean mLowBitAmbient;
         private SVG hourHandSvg;
         private SVG minuteHandSvg;
         private SVG ambientHourHandSvg;
@@ -183,10 +186,13 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private SVG twelveOCSvg;
         private SVG hourSvg;
         private SVG noteSvg;
+        private SVG noteAcSvg;
         private float[] scales;
         private Bitmap[] majorBitmap;
         private boolean isRound;
         private float batteryPct;
+        private int chargePlug;
+
         private IntentFilter batFilter;
         final BroadcastReceiver mBatteryReceiver = new BroadcastReceiver() {
             @Override
@@ -197,10 +203,23 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                     final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                     batteryPct = (scale == 0) ? 0 : level / (float) scale;
+
+                    int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
+                    boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
+                            status == BatteryManager.BATTERY_STATUS_FULL;
+
+                    int newChargePlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
+
+                    if (newChargePlug != chargePlug) {
+                        // enforce it
+                        chargePlug = newChargePlug;
+                        invalidate();
+                    }
+
                 }
             }
         };
-        private IntentFilter tzFilter;
+
         private String mHourInstrument;
         private String mMinuteInstrument;
 
@@ -257,6 +276,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 hourSvg = SVG.getFromResource(getResources(), R.raw.hour);
 
                 noteSvg = SVG.getFromResource(getResources(), R.raw.note);
+                noteAcSvg = SVG.getFromResource(getResources(), R.raw.note_ac);
             } catch (SVGParseException ex) {
                 ex.printStackTrace();
             }
@@ -480,7 +500,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void displayBattery(Canvas canvas) {
-            final Bitmap noteBmp = majorBitmap[5];
+            final boolean acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
+            final boolean usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB;
+            // either
+            final Bitmap noteBmp = (acCharge || usbCharge) ? majorBitmap[6] : majorBitmap[5];
 
             final float xmin = center.x * (1 + STAFF_X_RATIO_START);
             final float xmax = center.x * (1 + STAFF_X_RATIO_END);
@@ -573,8 +596,8 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private void createBitmapsFromSvgs() {
-            majorBitmap = new Bitmap[6];
-            scales = new float[6];
+            majorBitmap = new Bitmap[7];
+            scales = new float[7];
 
             createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false);
             createBitmapFromSvg(threeOCSvg, markBounds, 1, false);
@@ -582,6 +605,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             createBitmapFromSvg(nineOCSvg, markBounds, 3, false);
             createBitmapFromSvg(hourSvg, markHourBounds, 4, false);
             createBitmapFromSvg(noteSvg, markNoteBounds, 5, true);
+            createBitmapFromSvg(noteAcSvg, markNoteBounds, 6, true);
         }
 
         private PointF[] calcMarkHourLocations(Bitmap bitmap) {
