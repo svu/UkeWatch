@@ -99,7 +99,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         // 12 o'clock size
         static final float MARK12_RATIO = 0.35f;
         // 3, 6, 9 o'clock mark size
-        static final float MARK_RATIO = 0.18f;
+        static final float MARK_RATIO = 0.21f;
         // offset of marks from the border
         static final float MARK_OFFSET_RATIO = 0.1f;
         // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
