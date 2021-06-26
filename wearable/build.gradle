@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 30
     buildToolsVersion '29.0.2'
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
         minSdkVersion 24
         //noinspection OldTargetApi
-        targetSdkVersion 26
+        targetSdkVersion 30
         versionCode 19
         versionName '1.9'
     }
@@ -15,6 +15,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+
         }
     }
     productFlavors {
@@ -29,10 +30,10 @@ dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleCompatible
     implementation 'com.android.support:wear:28.0.0'
-    implementation 'com.google.android.gms:play-services-wearable:16.0.1'
+    implementation 'com.google.android.gms:play-services-wearable:17.1.0'
     //noinspection GradleCompatible
     implementation 'com.android.support:support-v13:28.0.0'
-    compileOnly 'com.google.android.wearable:wearable:2.4.0'
-    implementation 'com.google.android.support:wearable:2.4.0'
+    compileOnly 'com.google.android.wearable:wearable:2.8.1'
+    implementation 'com.google.android.support:wearable:2.8.1'
     implementation 'com.caverock:androidsvg-aar:1.3'
 }
