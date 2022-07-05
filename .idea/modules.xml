@@ -4,6 +4,9 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/UkeWatch.iml" filepath="$PROJECT_DIR$/UkeWatch.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.iml" filepath="$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.androidTest.iml" filepath="$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.androidTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.main.iml" filepath="$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.unitTest.iml" filepath="$PROJECT_DIR$/.idea/modules/wearable/UkeWatch.wearable.unitTest.iml" />
     </modules>
   </component>
 </project>
