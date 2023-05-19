@@ -35,10 +35,10 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
-import android.support.v4.content.res.ResourcesCompat;
-import android.support.wear.widget.WearableLinearLayoutManager;
-import android.support.wear.widget.WearableRecyclerView;
+import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.wear.widget.WearableLinearLayoutManager;
+import androidx.wear.widget.WearableRecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -57,6 +57,7 @@ import java.util.List;
 /**
  * Wearable config
  */
+@SuppressWarnings("CommentedOutCode")
 public class MusicWatchFaceConfigActivity extends Activity {
 
     private static final String TAG = "MusicWatchFaceConfig";
@@ -174,8 +175,10 @@ public class MusicWatchFaceConfigActivity extends Activity {
 
         mSelectedInstruments.put(key, value);
         DataMap configKeysToOverwrite = new DataMap();
+        //noinspection ConstantConditions
         configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
                 mSelectedInstruments.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT));
+        //noinspection ConstantConditions
         configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
                 mSelectedInstruments.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
 
@@ -286,6 +289,7 @@ public class MusicWatchFaceConfigActivity extends Activity {
             }
 
             @Override
+            @NonNull
             public String toString() {
                 return mInstrumentId;
             }

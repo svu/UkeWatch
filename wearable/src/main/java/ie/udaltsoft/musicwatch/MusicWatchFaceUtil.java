@@ -100,7 +100,7 @@ public final class MusicWatchFaceUtil {
         Log.i(TAG, "Instruments to be put as data item: " +
                 configToPut.getString(KEY_HOUR_INSTRUMENT) +
                 "/" +
-                configToPut.getString(KEY_MINUTE_INSTRUMENT) + " to " + dataClient.getInstanceId());
+                configToPut.getString(KEY_MINUTE_INSTRUMENT) + " to " + dataClient);
         dataClient.putDataItem(putDataMapRequest.asPutDataRequest())
                 .addOnSuccessListener(new OnSuccessListener<DataItem>() {
                     @Override

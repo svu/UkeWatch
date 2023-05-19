@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="ie.udaltsoft.musicwatch"
     tools:ignore="GoogleAppIndexingWarning">
 
     <uses-feature android:name="android.hardware.type.watch" />
@@ -20,7 +19,8 @@
         <service
             android:name=".MusicWatchFace"
             android:label="@string/visible_watch_name"
-            android:permission="android.permission.BIND_WALLPAPER" >
+            android:permission="android.permission.BIND_WALLPAPER"
+            android:exported="true">
             <meta-data
                 android:name="android.service.wallpaper"
                 android:resource="@xml/watch_face" />
@@ -45,7 +45,8 @@
 
         <activity
             android:name=".MusicWatchFaceConfigActivity"
-            android:label="@string/music_config_name">
+            android:label="@string/music_config_name"
+            android:exported="true">
             <intent-filter>
                 <action android:name="ie.udaltsoft.musicwatch.CONFIG" />
                 <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION" />

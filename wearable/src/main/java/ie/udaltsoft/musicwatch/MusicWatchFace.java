@@ -41,9 +41,10 @@ import android.graphics.RectF;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
-import android.support.annotation.NonNull;
-import android.support.v4.content.res.ResourcesCompat;
+import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
@@ -64,6 +65,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -114,7 +116,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         // battery note size
         static final float MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
 
-        final double HOUR_ANGLES[] = new double[]{
+        final double[] HOUR_ANGLES = new double[]{
                 30 * Math.PI / 180,
                 60 * Math.PI / 180,
                 120 * Math.PI / 180,
@@ -128,9 +130,10 @@ public class MusicWatchFace extends CanvasWatchFaceService {
          * Handler to update the time once a second in interactive mode.
          */
         @SuppressLint("HandlerLeak")
-        final Handler mUpdateTimeHandler = new Handler() {
+        final Handler mUpdateTimeHandler = new Handler(Looper.getMainLooper()) {
             @Override
             public void handleMessage(Message message) {
+                //noinspection SwitchStatementWithTooFewBranches
                 switch (message.what) {
                     case MSG_UPDATE_TIME:
                         invalidate();
@@ -203,10 +206,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                     final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                     batteryPct = (scale == 0) ? 0 : level / (float) scale;
-
-                    int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-                    boolean isCharging = status == BatteryManager.BATTERY_STATUS_CHARGING ||
-                            status == BatteryManager.BATTERY_STATUS_FULL;
 
                     int newChargePlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
 
@@ -486,8 +485,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         private void displayBatteryStaff(Canvas canvas) {
             final float xmin = center.x * (1 + STAFF_X_RATIO_START);
             final float xmax = center.x * (1 + STAFF_X_RATIO_END);
-            final float ymin = center.y * STAFF_Y_RATIO_START;
-            float ycur = ymin;
+            float ycur = center.y * STAFF_Y_RATIO_START;  // ymin
             final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
             for (int i = 0; i < 5; i++) {
                 canvas.drawLine(xmin,
@@ -512,7 +510,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
             final int watchBatteryNoteLevel = (int) Math.floor(this.batteryPct * 10);
             float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
             canvas.drawBitmap(noteBmp,
-                    xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2,
+                    xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2.0f,
                     ynote, mStaffPaint);
         }
 
@@ -725,8 +723,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                 }
 
                 DataItem dataItem = dataEvent.getDataItem();
-                if (!dataItem.getUri().getPath().equals(
-                        MusicWatchFaceUtil.PATH_WITH_FEATURE)) {
+                if (!Objects.equals(dataItem.getUri().getPath(), MusicWatchFaceUtil.PATH_WITH_FEATURE)) {
                     continue;
                 }
 

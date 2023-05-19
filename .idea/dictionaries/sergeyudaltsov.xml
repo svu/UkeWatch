@@ -3,6 +3,13 @@
     <words>
       <w>sergey</w>
       <w>udaltsov</w>
+      <w>xmax</w>
+      <w>xmin</w>
+      <w>ycur</w>
+      <w>ymax</w>
+      <w>ymin</w>
+      <w>ynote</w>
+      <w>ystep</w>
     </words>
   </dictionary>
 </component>
