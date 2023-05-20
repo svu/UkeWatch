@@ -10,12 +10,12 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@android:style/Theme.DeviceDefault"
         android:fullBackupContent="@xml/music_watch_face_backup"
-        android:supportsRtl="true">
+        android:supportsRtl="true"
+        tools:ignore="DataExtractionRules">
         <service
             android:name=".MusicWatchFace"
             android:label="@string/visible_watch_name"
@@ -32,7 +32,7 @@
                 android:resource="@drawable/preview_analog" />
             <meta-data
                 android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
-                android:value="ie.udaltsoft.musicwatch.CONFIG" />
+                android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
             <meta-data
                 android:name="com.google.android.wearable.standalone"
                 android:value="true" />
@@ -48,7 +48,7 @@
             android:label="@string/music_config_name"
             android:exported="true">
             <intent-filter>
-                <action android:name="ie.udaltsoft.musicwatch.CONFIG" />
+                <action android:name="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
                 <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>

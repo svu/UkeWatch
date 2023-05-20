@@ -1,14 +1,14 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 31
+    compileSdkVersion 30
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdkVersion 24
+        minSdkVersion 28
         //noinspection OldTargetApi
-        targetSdkVersion 31
-        versionCode 19
-        versionName '1.9'
+        targetSdkVersion 30
+        versionCode 20
+        versionName '2.0'
     }
     buildTypes {
         release {
@@ -28,8 +28,8 @@ android {
 
 dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
-    //noinspection GradleCompatible
-    implementation 'androidx.wear:wear:1.2.0'
+    //noinspection GradleDependency,GradleCompatible
+    implementation 'androidx.wear:wear:1.1.0'
     implementation 'com.google.android.gms:play-services-wearable:18.0.0'
     //noinspection GradleCompatible
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
