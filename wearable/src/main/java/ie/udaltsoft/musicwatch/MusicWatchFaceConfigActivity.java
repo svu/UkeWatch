@@ -87,18 +87,15 @@ public class MusicWatchFaceConfigActivity extends Activity {
         mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT;
 
         MusicWatchFaceUtil.fetchConfigDataMap(getApplicationContext(),
-                new MusicWatchFaceUtil.FetchConfigDataMapCallback() {
-                    @Override
-                    public void onConfigDataMapFetched(DataMap config) {
-                        final String hi = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                        final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                        Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
-                        mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
-                        mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
-                        scrollToSelected(hi, mListView);
-                    }
+                config -> {
+                    final String hi = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                            MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                    final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
+                            MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
+                    Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
+                    mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
+                    mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
+                    scrollToSelected(hi, mListView);
                 });
     }
 
@@ -331,18 +328,15 @@ public class MusicWatchFaceConfigActivity extends Activity {
             final String instr = mInstrumentsList.get(position);
             Log.d(TAG, "Element " + position + " set: " + instr);
 
-            viewHolder.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    updateConfigDataItem(mCurrentConfigKey, instr);
+            viewHolder.setOnClickListener(v -> {
+                updateConfigDataItem(mCurrentConfigKey, instr);
 
-                    if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-                        mHeader.setText(R.string.minutes);
-                        mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
-                        scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
-                    } else {
-                        finish();
-                    }
+                if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
+                    mHeader.setText(R.string.minutes);
+                    mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
+                    scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
+                } else {
+                    finish();
                 }
             });
 

@@ -67,18 +67,15 @@ public final class MusicWatchFaceUtil {
         final DataClient dataClient = Wearable.getDataClient(context);
         final NodeClient nodeClient = Wearable.getNodeClient(context);
         final Task<Node> task = nodeClient.getLocalNode();
-        task.addOnSuccessListener(new OnSuccessListener<Node>() {
-            @Override
-            public void onSuccess(Node result) {
-                String localNode = result.getId();
-                Uri uri = new Uri.Builder()
-                        .scheme("wear")
-                        .path(PATH_WITH_FEATURE)
-                        .authority(localNode)
-                        .build();
-                final Task<DataItem> diTask = dataClient.getDataItem(uri);
-                diTask.addOnSuccessListener(new DataItemSuccessCallback(callback));
-            }
+        task.addOnSuccessListener(result -> {
+            String localNode = result.getId();
+            Uri uri = new Uri.Builder()
+                    .scheme("wear")
+                    .path(PATH_WITH_FEATURE)
+                    .authority(localNode)
+                    .build();
+            final Task<DataItem> diTask = dataClient.getDataItem(uri);
+            diTask.addOnSuccessListener(new DataItemSuccessCallback(callback));
         });
     }
 
@@ -102,12 +99,7 @@ public final class MusicWatchFaceUtil {
                 "/" +
                 configToPut.getString(KEY_MINUTE_INSTRUMENT) + " to " + dataClient);
         dataClient.putDataItem(putDataMapRequest.asPutDataRequest())
-                .addOnSuccessListener(new OnSuccessListener<DataItem>() {
-                    @Override
-                    public void onSuccess(DataItem dataItem) {
-                        Log.d(TAG, "putDataItem.onSuccess: " + dataItem);
-                    }
-                });
+                .addOnSuccessListener(dataItem -> Log.d(TAG, "putDataItem.onSuccess: " + dataItem));
     }
 
     private static class DataItemSuccessCallback implements OnSuccessListener<DataItem> {
