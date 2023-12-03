@@ -294,6 +294,7 @@ public class MusicWatchFace extends CanvasWatchFaceService {
         }
 
         private SVG createHand(MusicWatchFaceUtil.HandKind kind, boolean ambient) throws SVGParseException {
+            @SuppressLint("DiscouragedApi")
             int id = getResources().getIdentifier((kind == MusicWatchFaceUtil.HandKind.HOUR ?
                     mHourInstrument : mMinuteInstrument) +
                     (ambient ? "_ambient" : "") + "_hand", "raw", getPackageName());
