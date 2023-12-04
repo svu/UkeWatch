@@ -3,15 +3,15 @@ apply plugin: 'com.android.application'
 android {
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdk 30
+        minSdk 33
         //noinspection OldTargetApi
-        targetSdkVersion 30
+        targetSdkVersion 33
         versionCode 20
-        versionName '2.1'
+        versionName '2.0'
     }
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 
         }
