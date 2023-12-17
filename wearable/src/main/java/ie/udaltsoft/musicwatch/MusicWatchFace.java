@@ -389,7 +389,6 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     ambientBaseBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
                     final Canvas abc = new Canvas(ambientBaseBitmap);
                     abc.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaintAmbient);
-                    draw12369(abc);
                 }
                 canvas.drawBitmap(ambientBaseBitmap, 0f, 0f, null);
             } else {
@@ -408,9 +407,9 @@ public class MusicWatchFace extends CanvasWatchFaceService {
                     displayBatteryStaff(nbc);
                 }
                 canvas.drawBitmap(normalBaseBitmap, 0f, 0f, null);
-            }
 
-            displayDate(canvas, now);
+                displayDate(canvas, now);
+            }
 
             if (!mAmbient) {
                 displayBattery(canvas);
