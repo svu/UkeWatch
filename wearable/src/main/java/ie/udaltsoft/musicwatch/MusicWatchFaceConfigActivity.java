@@ -37,11 +37,16 @@ import android.graphics.RectF;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.InputDeviceCompat;
+import androidx.core.view.MotionEventCompat;
+import androidx.core.view.ViewConfigurationCompat;
 import androidx.wear.widget.WearableLinearLayoutManager;
 import androidx.wear.widget.WearableRecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -152,7 +157,9 @@ public class MusicWatchFaceConfigActivity extends Activity {
     private WearableRecyclerView preparePicker() {
         final WearableRecyclerView listView = findViewById(R.id.instrument_picker);
 
-        listView.setLayoutManager(new WearableLinearLayoutManager(listView.getContext()));
+        final Context context=listView.getContext();
+
+        listView.setLayoutManager(new WearableLinearLayoutManager(context));
 
         listView.setEdgeItemsCenteringEnabled(true);
 
@@ -163,6 +170,27 @@ public class MusicWatchFaceConfigActivity extends Activity {
         initAllInstrumentIds(getResources());
 
         listView.setAdapter(new InstrumentAdapter(mAllInstrumentIds));
+
+        listView.requestFocus();
+
+        listView.setOnGenericMotionListener(new View.OnGenericMotionListener() {
+            @Override
+            public boolean onGenericMotion(View v, MotionEvent ev) {
+                if (ev.getAction() == MotionEvent.ACTION_SCROLL &&
+                        ev.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
+                ) {
+                    float delta = -ev.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                            ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                                    ViewConfiguration.get(context), context
+                            );
+
+                    v.scrollBy(0, Math.round(delta));
+
+                    return true;
+                }
+                return false;
+            }
+        });
 
         return listView;
     }
