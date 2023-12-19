@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Музыкальные Часы</string>
+    <string name="app_name">Часы "Музыкальные Инструменты"</string>
     <string name="hours">Часы</string>
     <string name="minutes">Минуты</string>
-    <string name="visible_watch_name">Музыкальные Часы</string>
+    <string name="visible_watch_name">Муз. Инструменты</string>
 </resources>
