@@ -56,7 +56,7 @@ import com.google.android.gms.wearable.DataMap
 import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.FetchConfigDataMapCallback
 import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.fetchConfigDataMap
 import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.putConfigDataItem
-import java.util.Arrays
+import kotlin.math.roundToInt
 
 /**
  * Wearable config
@@ -127,7 +127,7 @@ class MusicWatchFaceConfigActivity : Activity() {
                                 ViewConfigurationCompat.getScaledVerticalScrollFactor(
                                     ViewConfiguration.get(ctx), ctx
                                 )
-                        v.scrollBy(0, Math.round(delta))
+                        v.scrollBy(0, delta.roundToInt())
                         return@OnGenericMotionListener true
                     }
                 }
@@ -209,7 +209,7 @@ class MusicWatchFaceConfigActivity : Activity() {
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
             val instr = mInstrumentsList[position]
             Log.d(Companion.TAG, "Element $position set: $instr")
-            viewHolder.setOnClickListener { v: View? ->
+            viewHolder.setOnClickListener {
                 updateConfigDataItem(mCurrentConfigKey, instr)
                 if (mCurrentConfigKey == MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) {
                     mHeader.setText(R.string.minutes)
@@ -240,7 +240,7 @@ class MusicWatchFaceConfigActivity : Activity() {
         private fun initAllInstrumentIds(res: Resources) {
             if (!this::mAllInstrumentIds.isInitialized) {
                 mAllInstrumentIds =
-                    Arrays.asList(*res.getStringArray(R.array.all_instruments_array))
+                    listOf(*res.getStringArray(R.array.all_instruments_array))
                 Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size)
             }
         }
@@ -341,9 +341,6 @@ class MusicWatchFaceConfigActivity : Activity() {
                 translate(-offset.x + offset.y, -offset.x + offset.y)
                 rotate(-90f, offset.x, offset.y)
 
-                /*drawRect(0, 0, svgw, svgh/2, pr);
-                drawLine(svgw/4, 0, svgw/4, svgh/2, pg);
-                drawCircle(svgw/2, 0, svgw/2, pb); */
                 svg.renderToCanvas(this, RectF(0f, 0f, svgSize.x, svgSize.y))
                 restore()
             }

@@ -63,7 +63,20 @@ object MusicWatchFaceUtil {
                 .authority(localNode)
                 .build()
             val diTask = dataClient.getDataItem(uri)
-            diTask.addOnSuccessListener(DataItemSuccessCallback(callback))
+
+            val successListener = object : OnSuccessListener<DataItem?> {
+                val mCallback = callback
+                override fun onSuccess(configDataItem: DataItem?) {
+                    Log.d(TAG, "DataItemSuccessCallback.onSuccess: $configDataItem")
+                    if (configDataItem != null) {
+                        val dataMapItem = DataMapItem.fromDataItem(configDataItem)
+                        mCallback.onConfigDataMapFetched(dataMapItem.dataMap)
+                    } else {
+                        mCallback.onConfigDataMapFetched(DataMap())
+                    }
+                }
+            }
+            diTask.addOnSuccessListener(successListener)
         }
     }
 
@@ -127,18 +140,5 @@ object MusicWatchFaceUtil {
 
     fun interface FetchConfigDataMapCallback {
         fun onConfigDataMapFetched(config: DataMap)
-    }
-
-    private class DataItemSuccessCallback(private val mCallback: FetchConfigDataMapCallback) :
-        OnSuccessListener<DataItem?> {
-        override fun onSuccess(configDataItem: DataItem?) {
-            Log.d(TAG, "DataItemSuccessCallback.onSuccess: $configDataItem")
-            if (configDataItem != null) {
-                val dataMapItem = DataMapItem.fromDataItem(configDataItem)
-                mCallback.onConfigDataMapFetched(dataMapItem.dataMap)
-            } else {
-                mCallback.onConfigDataMapFetched(DataMap())
-            }
-        }
     }
 }
