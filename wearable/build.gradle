@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     defaultConfig {
@@ -20,11 +21,14 @@ android {
     productFlavors {
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+    kotlin {
+        jvmToolchain(11)
     }
     namespace 'ie.udaltsoft.musicwatch'
-    compileSdk 33
+    compileSdk 34
 }
 
 dependencies {
@@ -34,6 +38,7 @@ dependencies {
     implementation 'com.google.android.gms:play-services-wearable:18.1.0'
     //noinspection GradleCompatible
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
+    implementation 'androidx.core:core-ktx:+'
     compileOnly 'com.google.android.wearable:wearable:2.9.0'
     implementation 'com.google.android.support:wearable:2.9.0'
     implementation 'com.caverock:androidsvg-aar:1.4'
