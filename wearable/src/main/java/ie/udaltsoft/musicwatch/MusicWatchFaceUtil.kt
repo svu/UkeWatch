@@ -125,8 +125,8 @@ object MusicWatchFaceUtil {
         MINUTE
     }
 
-    interface FetchConfigDataMapCallback {
-        fun onConfigDataMapFetched(config: DataMap?)
+    fun interface FetchConfigDataMapCallback {
+        fun onConfigDataMapFetched(config: DataMap)
     }
 
     private class DataItemSuccessCallback(private val mCallback: FetchConfigDataMapCallback) :

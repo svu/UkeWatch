@@ -23,226 +23,287 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package ie.udaltsoft.musicwatch
 
-package ie.udaltsoft.musicwatch;
-
-import android.app.Activity;
-import android.content.Context;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PointF;
-import android.graphics.RectF;
-import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
-import androidx.core.view.InputDeviceCompat;
-import androidx.core.view.MotionEventCompat;
-import androidx.core.view.ViewConfigurationCompat;
-import androidx.wear.widget.WearableLinearLayoutManager;
-import androidx.wear.widget.WearableRecyclerView;
-import android.util.Log;
-import android.view.LayoutInflater;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewConfiguration;
-import android.view.ViewGroup;
-import android.widget.ImageView;
-import android.widget.TextView;
-
-import com.caverock.androidsvg.SVG;
-import com.caverock.androidsvg.SVGParseException;
-import com.google.android.gms.wearable.DataMap;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import android.app.Activity
+import android.content.Context
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PointF
+import android.graphics.RectF
+import android.os.Bundle
+import android.util.Log
+import android.view.LayoutInflater
+import android.view.MotionEvent
+import android.view.View
+import android.view.View.OnGenericMotionListener
+import android.view.ViewConfiguration
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.InputDeviceCompat
+import androidx.core.view.MotionEventCompat
+import androidx.core.view.ViewConfigurationCompat
+import androidx.recyclerview.widget.RecyclerView
+import androidx.wear.widget.WearableLinearLayoutManager
+import androidx.wear.widget.WearableRecyclerView
+import com.caverock.androidsvg.SVG
+import com.caverock.androidsvg.SVGParseException
+import com.google.android.gms.wearable.DataMap
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.FetchConfigDataMapCallback
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.fetchConfigDataMap
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.putConfigDataItem
+import java.util.Arrays
 
 /**
  * Wearable config
  */
-@SuppressWarnings("CommentedOutCode")
-public class MusicWatchFaceConfigActivity extends Activity {
-
-    private static final String TAG = "MusicWatchFaceConfig";
-
-    private TextView mHeader;
-    private WearableRecyclerView mListView;
-
-    private final HashMap<String, String> mSelectedInstruments = new HashMap<>();
-    private String mCurrentConfigKey;
-
-    private static List<String> mAllInstrumentIds;
-    private static final HashMap<String, Bitmap> mBitmaps = new HashMap<>();
-    private static Paint mCircleBorderPaint;
-
-    private static final float MAX_BMP_SIZE = 150;
-    private static final float REDUCED_INSTRUMENT_RATIO = 0.5f;
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.music_watch_config);
-
-        mHeader = findViewById(R.id.header);
-
-        mListView = preparePicker();
-
-        mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT;
-
-        MusicWatchFaceUtil.fetchConfigDataMap(getApplicationContext(),
-                config -> {
-                    final String hi = config.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                            MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                    final String mi = config.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                            MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT);
-                    Log.i(TAG, "Initial set of instruments: " + hi + "/" + mi);
-                    mSelectedInstruments.put(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, hi);
-                    mSelectedInstruments.put(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, mi);
-                    scrollToSelected(hi, mListView);
-                });
+class MusicWatchFaceConfigActivity : Activity() {
+    private lateinit var mHeader: TextView
+    private lateinit var mListView: WearableRecyclerView
+    private val mSelectedInstruments = HashMap<String, String>()
+    private lateinit var mCurrentConfigKey: String
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.music_watch_config)
+        mHeader = findViewById(R.id.header)
+        mListView = preparePicker()
+        mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT
+        fetchConfigDataMap(applicationContext,
+            FetchConfigDataMapCallback { config: DataMap ->
+                val hi = config.getString(
+                    MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                    MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
+                )
+                val mi = config.getString(
+                    MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
+                    MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
+                )
+                Log.i(TAG, "Initial set of instruments: $hi/$mi")
+                mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT] = hi
+                mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT] = mi
+                scrollToSelected(hi, mListView)
+            })
     }
 
-    private static void initAllInstrumentIds(Resources res) {
-        if (mAllInstrumentIds == null) {
-            mAllInstrumentIds = Arrays.asList(res.getStringArray(R.array.all_instruments_array));
-            Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size());
-        }
-    }
-
-    public static void buildAllBitmaps(Resources res, Context context) {
-        mCircleBorderPaint = createBorderPaint(res);
-
-        initAllInstrumentIds(res);
-
-        for (String instrumentId : mAllInstrumentIds) {
-            try {
-                Log.i(TAG, "The instrument bitmap was not built yet, building " + instrumentId);
-                final Bitmap bmp = buildBitmap(res, context, instrumentId);
-                mBitmaps.put(instrumentId, bmp);
-            } catch (SVGParseException ex) {
-                Log.e(TAG, "Could not build bitmap: " + ex);
-                ex.printStackTrace();
+    private fun scrollToSelected(
+        instrument: String,
+        view: WearableRecyclerView
+    ) {
+        Log.d(TAG, "Scrolling to instrument /$instrument/")
+        var idx = 0
+        for (i in mAllInstrumentIds) {
+            if (i == instrument) {
+                Log.d(TAG, "Scrolling to position /$idx/")
+                view.scrollToPosition(idx)
+                break
             }
+            idx++
         }
     }
 
-    private static Paint createBorderPaint(Resources res) {
-        final Paint paint = new Paint();
-        paint.setStrokeWidth(4);
-        paint.setColor(ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null));
-        paint.setAntiAlias(true);
-        paint.setStyle(Paint.Style.STROKE);
-        return paint;
+    private fun preparePicker(): WearableRecyclerView {
+        val listView = findViewById<WearableRecyclerView>(R.id.instrument_picker)
+        val ctx = listView.context
+        with (listView) {
+            layoutManager = WearableLinearLayoutManager(ctx)
+            isEdgeItemsCenteringEnabled = true
 
-    }
-
-    private void scrollToSelected(String instrument,
-                                  WearableRecyclerView view) {
-        Log.d(TAG, "Scrolling to instrument /" + instrument + "/");
-
-        int idx = 0;
-        for (String i : mAllInstrumentIds) {
-            if (i.equals(instrument)) {
-                Log.d(TAG, "Scrolling to position /" + idx + "/");
-                view.scrollToPosition(idx);
-                break;
-            }
-            idx++;
-        }
-    }
-
-    @NonNull
-    private WearableRecyclerView preparePicker() {
-        final WearableRecyclerView listView = findViewById(R.id.instrument_picker);
-
-        final Context context=listView.getContext();
-
-        listView.setLayoutManager(new WearableLinearLayoutManager(context));
-
-        listView.setEdgeItemsCenteringEnabled(true);
-
-        // Improves performance because we know changes in content do not change the layout size of
-        // the RecyclerView.
-        listView.setHasFixedSize(true);
-
-        initAllInstrumentIds(getResources());
-
-        listView.setAdapter(new InstrumentAdapter(mAllInstrumentIds));
-
-        listView.requestFocus();
-
-        listView.setOnGenericMotionListener(new View.OnGenericMotionListener() {
-            @Override
-            public boolean onGenericMotion(View v, MotionEvent ev) {
-                if (ev.getAction() == MotionEvent.ACTION_SCROLL &&
-                        ev.isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
-                ) {
-                    float delta = -ev.getAxisValue(MotionEventCompat.AXIS_SCROLL) *
-                            ViewConfigurationCompat.getScaledVerticalScrollFactor(
-                                    ViewConfiguration.get(context), context
-                            );
-
-                    v.scrollBy(0, Math.round(delta));
-
-                    return true;
+            // Improves performance because we know changes in content do not change the layout size of
+            // the RecyclerView.
+            setHasFixedSize(true)
+            initAllInstrumentIds(resources)
+            adapter = InstrumentAdapter(mAllInstrumentIds)
+            requestFocus()
+            setOnGenericMotionListener(OnGenericMotionListener { v, ev ->
+                with (ev) {
+                    if (action == MotionEvent.ACTION_SCROLL &&
+                        isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
+                    ) {
+                        val delta = -getAxisValue(MotionEventCompat.AXIS_SCROLL) *
+                                ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                                    ViewConfiguration.get(ctx), ctx
+                                )
+                        v.scrollBy(0, Math.round(delta))
+                        return@OnGenericMotionListener true
+                    }
                 }
-                return false;
+                false
+            })
+        }
+        return listView
+    }
+
+    private fun updateConfigDataItem(key: String, value: String) {
+        databaseList()
+        mSelectedInstruments[key] = value
+        val configKeysToOverwrite = DataMap()
+        with (configKeysToOverwrite) {
+            putString(
+                MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT]!!
+            )
+            putString(
+                MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
+                mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT]!!
+            )
+            Log.i(
+                TAG, "Instrument just overwritten from UI: " +
+                        getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) +
+                        "/" +
+                        getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)
+            )
+        }
+        putConfigDataItem(applicationContext, configKeysToOverwrite)
+    }
+
+    private inner class InstrumentAdapter(private val mInstrumentsList: List<String>) :
+        RecyclerView.Adapter<InstrumentAdapter.ViewHolder>() {
+        /**
+         * Provides reference to the views for each data item. We don't maintain a reference to the
+         * [ImageView] (representing the icon), because it does not change for each item. We
+         * wanted to keep the sample simple, but you could add extra code to customize each icon.
+         */
+        private inner class ViewHolder(view: View) :
+            RecyclerView.ViewHolder(view) {
+            private val mInstrumentPreview: ImageView
+            private lateinit var mInstrumentId: String
+
+            init {
+                mInstrumentPreview = view.findViewById(R.id.instrument_preview)
             }
-        });
 
-        return listView;
+            override fun toString(): String {
+                return mInstrumentId
+            }
+
+            fun setInstrumentId(instrumentId: String) {
+                mInstrumentId = instrumentId
+                val bmp = mBitmaps[instrumentId]
+                with (mInstrumentPreview) {
+                    if (bmp != null) {
+                        setImageBitmap(bmp)
+                    } else {
+                        Log.e(Companion.TAG, "Could not find bitmap for $instrumentId")
+                    }
+                    cropToPadding = false
+                    adjustViewBounds = true
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                }
+            }
+
+            fun setOnClickListener(listener: View.OnClickListener) {
+                mInstrumentPreview.setOnClickListener(listener)
+            }
+        }
+
+        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
+            val view = LayoutInflater.from(viewGroup.context)
+                .inflate(R.layout.instrument_picker_item, viewGroup, false)
+            return ViewHolder(view)
+        }
+
+        override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
+            val instr = mInstrumentsList[position]
+            Log.d(Companion.TAG, "Element $position set: $instr")
+            viewHolder.setOnClickListener { v: View? ->
+                updateConfigDataItem(mCurrentConfigKey, instr)
+                if (mCurrentConfigKey == MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) {
+                    mHeader.setText(R.string.minutes)
+                    mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT
+                    scrollToSelected(mSelectedInstruments[mCurrentConfigKey]!!, mListView)
+                } else {
+                    finish()
+                }
+            }
+
+            // Replaces content of view with correct element from data set
+            viewHolder.setInstrumentId(instr)
+        }
+
+        // Return the size of your dataset (invoked by the layout manager)
+        override fun getItemCount(): Int {
+            return mInstrumentsList.size
+        }
     }
 
-    private void updateConfigDataItem(String key, String value) {
-        databaseList();
+    companion object {
+        private const val TAG = "MusicWatchFaceConfig"
+        private lateinit var mAllInstrumentIds: List<String>
+        private lateinit var mCircleBorderPaint: Paint
+        private val mBitmaps = HashMap<String, Bitmap>()
+        private const val MAX_BMP_SIZE = 150f
+        private const val REDUCED_INSTRUMENT_RATIO = 0.5f
+        private fun initAllInstrumentIds(res: Resources) {
+            if (!this::mAllInstrumentIds.isInitialized) {
+                mAllInstrumentIds =
+                    Arrays.asList(*res.getStringArray(R.array.all_instruments_array))
+                Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size)
+            }
+        }
 
-        mSelectedInstruments.put(key, value);
-        DataMap configKeysToOverwrite = new DataMap();
-        //noinspection ConstantConditions
-        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                mSelectedInstruments.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT));
-        //noinspection ConstantConditions
-        configKeysToOverwrite.putString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                mSelectedInstruments.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
+        @JvmStatic
+        fun buildAllBitmaps(res: Resources, context: Context) {
+            if (!this::mCircleBorderPaint.isInitialized) {
+                mCircleBorderPaint = createBorderPaint(res)
+            }
+            initAllInstrumentIds(res)
+            for (instrumentId in mAllInstrumentIds) {
+                try {
+                    Log.i(TAG, "The instrument bitmap was not built yet, building $instrumentId")
+                    val bmp = buildBitmap(res, context, instrumentId)
+                    mBitmaps[instrumentId] = bmp
+                } catch (ex: SVGParseException) {
+                    Log.e(TAG, "Could not build bitmap: $ex")
+                    ex.printStackTrace()
+                }
+            }
+        }
 
-        Log.i(TAG, "Instrument just overwritten from UI: " +
-                configKeysToOverwrite.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) +
-                "/" +
-                configKeysToOverwrite.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
+        private fun createBorderPaint(res: Resources): Paint {
+            val paint = Paint()
+            with (paint) {
+                strokeWidth = 4f
+                color =
+                    ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null)
+                isAntiAlias = true
+                style = Paint.Style.STROKE
+            }
+            return paint
+        }
 
-        MusicWatchFaceUtil.putConfigDataItem(getApplicationContext(), configKeysToOverwrite);
-    }
+        @Throws(SVGParseException::class)
+        private fun buildBitmap(res: Resources, context: Context, instrument: String): Bitmap {
+            val svgResourceId = res.getIdentifier(instrument + "_hand", "raw", context.packageName)
+            val svg = SVG.getFromResource(res, svgResourceId)
 
-    private static Bitmap buildBitmap(Resources res, Context context, String instrument) throws SVGParseException {
-        final int svgResourceId = res.getIdentifier(instrument + "_hand", "raw", context.getPackageName());
+            // for vertical instruments, <1
+            val svgWHAspectRatio = svg.documentAspectRatio
+            val svgSize = PointF(
+                svg.documentViewBox.width(),
+                svg.documentViewBox.height()
+            )
 
-        final SVG svg = SVG.getFromResource(res, svgResourceId);
-
-        // for vertical instruments, <1
-        final float svgWHAspectRatio = svg.getDocumentAspectRatio();
-        final PointF svgSize = new PointF(svg.getDocumentViewBox().width(),
-                svg.getDocumentViewBox().height());
-
-        /*Log.i(TAG, "Hand: " + instrument +
+            /*Log.i(TAG, "Hand: " + instrument +
                 ", SVG w/h ratio: " + svgWHAspectRatio +
                 " or may be " + (svgSize.x / svgSize.y) +
                 ", SVG: " + svgSize.x + ":" + svgSize.y);*/
-        // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
-        final PointF bmpSize = new PointF(MAX_BMP_SIZE, MAX_BMP_SIZE / 2f);
+            // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
+            val bmpSize = PointF(MAX_BMP_SIZE, MAX_BMP_SIZE / 2f)
+            val scaledH = bmpSize.x * svgWHAspectRatio
+            //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
+            val bmp = Bitmap.createBitmap(
+                bmpSize.x.toInt(), bmpSize.y.toInt(),
+                Bitmap.Config.ARGB_8888
+            )
+            val scale = scaledH / svgSize.x * REDUCED_INSTRUMENT_RATIO
+            //Log.i(TAG, "scale, converting svg to bmp: " + scale);
+            val canvas = Canvas(bmp)
 
-        final float scaledH = bmpSize.x * svgWHAspectRatio;
-        //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
-
-        final Bitmap bmp = Bitmap.createBitmap((int) bmpSize.x,
-                (int) bmpSize.y,
-                Bitmap.Config.ARGB_8888);
-        final float scale = scaledH / svgSize.x * REDUCED_INSTRUMENT_RATIO;
-        //Log.i(TAG, "scale, converting svg to bmp: " + scale);
-
-        final Canvas canvas = new Canvas(bmp);
-
+            with (canvas) {
                 /*Paint pb = new Paint();
                 pb.setStrokeWidth(10);
                 pb.setColor(Color.BLUE);
@@ -251,131 +312,42 @@ public class MusicWatchFaceConfigActivity extends Activity {
                 pg.setStrokeWidth(10);
                 pg.setColor(Color.GREEN);*/
 
-        //canvas.drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
-        // V from left-top -> centre -> right-top
-        canvas.drawOval(2, 2, bmpSize.x - 2, bmpSize.y - 2, mCircleBorderPaint);
+                //drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
+                // V from left-top -> centre -> right-top
+                drawOval(2f, 2f, bmpSize.x - 2, bmpSize.y - 2, mCircleBorderPaint)
 
-        //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
-        //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+                //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+                //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+                save()
+                // This is to make sure scaled and unscaled centres are the same
+                translate(
+                    (bmpSize.x - svgSize.y * scale) / 2f,
+                    (bmpSize.y - svgSize.x * scale) / 2f
+                )
+                scale(scale, scale)
 
-        canvas.save();
-        // This is to make sure scaled and unscaled centres are the same
-        canvas.translate((bmpSize.x - svgSize.y * scale) / 2f,
-                (bmpSize.y - svgSize.x * scale) / 2f);
-        canvas.scale(scale, scale);
-
-        // ^ from left-bottom -> centre -> right-bottom
-                /*canvas.drawLine(0,
+                // ^ from left-bottom -> centre -> right-bottom
+                /*drawLine(0,
                         svgSize.x,
                         svgSize.y / 2,
                         svgSize.x / 2, pr);
 
-                canvas.drawLine(svgSize.y / 2,
+                drawLine(svgSize.y / 2,
                         svgSize.x / 2,
                         svgSize.y,
                         svgSize.x, pr);*/
+                val offset = PointF(svgSize.y / 2f, svgSize.x / 2f)
+                //Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
+                translate(-offset.x + offset.y, -offset.x + offset.y)
+                rotate(-90f, offset.x, offset.y)
 
-        final PointF offset = new PointF(svgSize.y / 2f, svgSize.x / 2f);
-        //Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
-        canvas.translate(-offset.x + offset.y, -offset.x + offset.y);
-        canvas.rotate(-90f, offset.x, offset.y);
-
-                /*canvas.drawRect(0, 0, svgw, svgh/2, pr);
-                canvas.drawLine(svgw/4, 0, svgw/4, svgh/2, pg);
-                canvas.drawCircle(svgw/2, 0, svgw/2, pb);
-*/
-        svg.renderToCanvas(canvas, new RectF(0, 0, svgSize.x, svgSize.y));
-        canvas.restore();
-
-        return bmp;
-    }
-
-    private class InstrumentAdapter extends
-            WearableRecyclerView.Adapter<InstrumentAdapter.ViewHolder> {
-
-        private static final String TAG = "InstrumentAdapter";
-
-        private final List<String> mInstrumentsList;
-
-        /**
-         * Provides reference to the views for each data item. We don't maintain a reference to the
-         * {@link ImageView} (representing the icon), because it does not change for each item. We
-         * wanted to keep the sample simple, but you could add extra code to customize each icon.
-         */
-        protected class ViewHolder extends WearableRecyclerView.ViewHolder {
-
-            private final ImageView mInstrumentPreview;
-
-            private String mInstrumentId;
-
-            private ViewHolder(View view) {
-                super(view);
-                mInstrumentPreview = view.findViewById(R.id.instrument_preview);
+                /*drawRect(0, 0, svgw, svgh/2, pr);
+                drawLine(svgw/4, 0, svgw/4, svgh/2, pg);
+                drawCircle(svgw/2, 0, svgw/2, pb); */
+                svg.renderToCanvas(this, RectF(0f, 0f, svgSize.x, svgSize.y))
+                restore()
             }
-
-            @Override
-            @NonNull
-            public String toString() {
-                return mInstrumentId;
-            }
-
-            private void setInstrumentId(String instrumentId) {
-                mInstrumentId = instrumentId;
-
-                Bitmap bmp = mBitmaps.get(instrumentId);
-                if (bmp != null) {
-                    mInstrumentPreview.setImageBitmap(bmp);
-                } else {
-                    Log.e(TAG, "Could not find bitmap for " + instrumentId);
-                }
-                mInstrumentPreview.setCropToPadding(false);
-                mInstrumentPreview.setAdjustViewBounds(true);
-                mInstrumentPreview.setScaleType(ImageView.ScaleType.FIT_CENTER);
-            }
-
-            private void setOnClickListener(View.OnClickListener listener) {
-                mInstrumentPreview.setOnClickListener(listener);
-            }
-        }
-
-        private InstrumentAdapter(List<String> instruments) {
-            mInstrumentsList = instruments;
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int viewType) {
-            View view = LayoutInflater.from(viewGroup.getContext())
-                    .inflate(R.layout.instrument_picker_item, viewGroup, false);
-
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder viewHolder, final int position) {
-            final String instr = mInstrumentsList.get(position);
-            Log.d(TAG, "Element " + position + " set: " + instr);
-
-            viewHolder.setOnClickListener(v -> {
-                updateConfigDataItem(mCurrentConfigKey, instr);
-
-                if (mCurrentConfigKey.equals(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-                    mHeader.setText(R.string.minutes);
-                    mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT;
-                    scrollToSelected(mSelectedInstruments.get(mCurrentConfigKey), mListView);
-                } else {
-                    finish();
-                }
-            });
-
-            // Replaces content of view with correct element from data set
-            viewHolder.setInstrumentId(instr);
-        }
-
-        // Return the size of your dataset (invoked by the layout manager)
-        @Override
-        public int getItemCount() {
-            return mInstrumentsList.size();
+            return bmp
         }
     }
 }
