@@ -23,712 +23,739 @@
  * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
  * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+package ie.udaltsoft.musicwatch
 
-package ie.udaltsoft.musicwatch;
-
-import android.annotation.SuppressLint;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.res.Resources;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.PointF;
-import android.graphics.Rect;
-import android.graphics.RectF;
-import android.os.BatteryManager;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
-import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
-import android.support.wearable.watchface.CanvasWatchFaceService;
-import android.support.wearable.watchface.WatchFaceStyle;
-import android.util.Log;
-import android.view.SurfaceHolder;
-import android.view.WindowInsets;
-
-import com.caverock.androidsvg.SVG;
-import com.caverock.androidsvg.SVGParseException;
-import com.google.android.gms.wearable.DataClient;
-import com.google.android.gms.wearable.DataEvent;
-import com.google.android.gms.wearable.DataEventBuffer;
-import com.google.android.gms.wearable.DataItem;
-import com.google.android.gms.wearable.DataMap;
-import com.google.android.gms.wearable.DataMapItem;
-
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.Locale;
-import java.util.Objects;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
+import android.annotation.SuppressLint
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.PointF
+import android.graphics.Rect
+import android.graphics.RectF
+import android.os.BatteryManager
+import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
+import android.support.wearable.watchface.CanvasWatchFaceService
+import android.support.wearable.watchface.WatchFaceStyle
+import android.util.Log
+import android.view.SurfaceHolder
+import android.view.WindowInsets
+import androidx.core.content.res.ResourcesCompat
+import com.caverock.androidsvg.SVG
+import com.caverock.androidsvg.SVGParseException
+import com.google.android.gms.wearable.DataClient.OnDataChangedListener
+import com.google.android.gms.wearable.DataEvent
+import com.google.android.gms.wearable.DataEventBuffer
+import com.google.android.gms.wearable.DataMap
+import com.google.android.gms.wearable.DataMapItem
+import ie.udaltsoft.musicwatch.MusicWatchFaceConfigActivity.Companion.buildAllBitmaps
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.HandKind
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.addDataListener
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.fetchConfigDataMap
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.putConfigDataItem
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.removeDataListener
+import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.setDefaultValuesForMissingConfigKeys
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.GregorianCalendar
+import java.util.Locale
+import java.util.TimeZone
+import java.util.concurrent.TimeUnit
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
  * devices with low-bit ambient mode, the hands are drawn without anti-aliasing in ambient mode.
  */
-public class MusicWatchFace extends CanvasWatchFaceService {
-
-    private static final String TAG = "MusicWatchFace";
-
-    /**
-     * Update rate in milliseconds for interactive mode. We update once a second to advance the
-     * second hand.
-     */
-    private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1);
-
-    @Override
-    public Engine onCreateEngine() {
-        return new Engine();
+class MusicWatchFace : CanvasWatchFaceService() {
+    override fun onCreateEngine(): Engine {
+        return Engine()
     }
 
-    private class Engine extends CanvasWatchFaceService.Engine
-            implements DataClient.OnDataChangedListener {
-        static final int MSG_UPDATE_TIME = 0;
+    inner class Engine constructor() : CanvasWatchFaceService.Engine(),
+        OnDataChangedListener {
 
-        // Hands
-        static final float HOUR_HAND_RATIO = 0.90f;
-        static final float MINUTE_HAND_RATIO = 1.15f;
-        // Where is the nail on the hands?
-        static final float NAIL_RATIO = 0.7f;
-
-        // 12 o'clock size
-        static final float MARK12_RATIO = 0.35f;
-        // 3, 6, 9 o'clock mark size
-        static final float MARK_RATIO = 0.21f;
-        // offset of marks from the border
-        static final float MARK_OFFSET_RATIO = 0.1f;
-        // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
-        static final float MARK_HOUR_RATIO = 0.04f;
-
-        static final float STAFF_X_RATIO_START = 0.35f;
-        static final float STAFF_X_RATIO_END = 0.55f;
-
-        static final float STAFF_Y_RATIO_START = 0.45f;
-        static final float STAFF_Y_RATIO_END = 0.75f;
-        // 0.5 0.575 0.65 0.725 0.8
-        // battery note size
-        static final float MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
-
-        final double[] HOUR_ANGLES = new double[]{
-                30 * Math.PI / 180,
-                60 * Math.PI / 180,
-                120 * Math.PI / 180,
-                150 * Math.PI / 180,
-                210 * Math.PI / 180,
-                240 * Math.PI / 180,
-                300 * Math.PI / 180,
-                330 * Math.PI / 180
-        };
         /**
          * Handler to update the time once a second in interactive mode.
          */
         @SuppressLint("HandlerLeak")
-        final Handler mUpdateTimeHandler = new Handler(Looper.getMainLooper()) {
-            @Override
-            public void handleMessage(Message message) {
-                //noinspection SwitchStatementWithTooFewBranches
-                switch (message.what) {
-                    case MSG_UPDATE_TIME:
-                        invalidate();
+        val mUpdateTimeHandler: Handler = object : Handler(Looper.getMainLooper()) {
+            override fun handleMessage(message: Message) {
+                when (message.what) {
+                    Companion.MSG_UPDATE_TIME -> {
+                        invalidate()
                         if (shouldTimerBeRunning()) {
-                            long timeMs = System.currentTimeMillis();
-                            long delayMs = INTERACTIVE_UPDATE_RATE_MS
-                                    - (timeMs % INTERACTIVE_UPDATE_RATE_MS);
-                            mUpdateTimeHandler.sendEmptyMessageDelayed(MSG_UPDATE_TIME, delayMs);
+                            val timeMs = System.currentTimeMillis()
+                            val delayMs =
+                                INTERACTIVE_UPDATE_RATE_MS - timeMs % INTERACTIVE_UPDATE_RATE_MS
+                            sendEmptyMessageDelayed(Companion.MSG_UPDATE_TIME, delayMs)
                         }
-                        break;
+                    }
                 }
             }
-        };
-        Paint mBackgroundPaint;
-        Paint mBackgroundPaintAmbient;
-        Paint mStaffPaint;
-        Paint mHandPaint;
-        boolean mAmbient;
-        GregorianCalendar mTime;
-
-        private IntentFilter tzFilter;
-        private final BroadcastReceiver mTimeZoneReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                mTime.setTimeZone(TimeZone.getTimeZone(intent.getStringExtra("time-zone")));
+        }
+        var mBackgroundPaint: Paint? = null
+        var mBackgroundPaintAmbient: Paint? = null
+        var mStaffPaint: Paint? = null
+        var mHandPaint: Paint? = null
+        var mAmbient = false
+        var mTime: GregorianCalendar? = null
+        private var tzFilter: IntentFilter? = null
+        private val mTimeZoneReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                mTime!!.timeZone = TimeZone.getTimeZone(intent.getStringExtra("time-zone"))
             }
-        };
+        }
+        var center: PointF? = null
+        var secLength = 0f
+        var mRegisteredTimeZoneReceiver = false
 
-        PointF center;
-        float secLength;
-        boolean mRegisteredTimeZoneReceiver = false;
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
          */
-        private boolean mLowBitAmbient;
-        private SVG hourHandSvg;
-        private SVG minuteHandSvg;
-        private SVG ambientHourHandSvg;
-        private SVG ambientMinuteHandSvg;
-        private PointF hourRotationPoint;
-        private PointF minuteRotationPoint;
-        private PointF markBounds;
-        private PointF mark12Bounds;
-        private PointF markHourBounds;
-        private PointF markNoteBounds;
-        private RectF hourHandRect;
-        private RectF minuteHandRect;
-        private DateFormat mDateFormat = new SimpleDateFormat("EEE, MMM d", Locale.getDefault());
-        private SVG threeOCSvg;
-        private SVG sixOCSvg;
-        private SVG nineOCSvg;
-        private SVG twelveOCSvg;
-        private SVG hourSvg;
-        private SVG noteSvg;
-        private SVG noteAcSvg;
-        private float[] scales;
-        private Bitmap[] majorBitmap;
-        private boolean isRound;
-        private float batteryPct;
-        private int chargePlug;
+        private var mLowBitAmbient = false
+        private var hourHandSvg: SVG? = null
+        private var minuteHandSvg: SVG? = null
+        private var ambientHourHandSvg: SVG? = null
+        private var ambientMinuteHandSvg: SVG? = null
+        private var hourRotationPoint: PointF? = null
+        private var minuteRotationPoint: PointF? = null
+        private var markBounds: PointF? = null
+        private var mark12Bounds: PointF? = null
+        private var markHourBounds: PointF? = null
+        private var markNoteBounds: PointF? = null
+        private var hourHandRect: RectF? = null
+        private var minuteHandRect: RectF? = null
+        private var mDateFormat: DateFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
+        private var threeOCSvg: SVG? = null
+        private var sixOCSvg: SVG? = null
+        private var nineOCSvg: SVG? = null
+        private var twelveOCSvg: SVG? = null
+        private var hourSvg: SVG? = null
+        private var noteSvg: SVG? = null
+        private var noteAcSvg: SVG? = null
 
-        private IntentFilter batFilter;
-        final BroadcastReceiver mBatteryReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                final Intent batteryStatus = MusicWatchFace.this.registerReceiver(null, batFilter);
+        private var scales: FloatArray = FloatArray(7)
+        private var majorBitmap: Array<Bitmap?> = arrayOfNulls(7)
 
+        private var isRound = false
+        private var batteryPct = 0f
+        private var chargePlug = 0
+        private var batFilter: IntentFilter? = null
+        val mBatteryReceiver: BroadcastReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                val batteryStatus = this@MusicWatchFace.registerReceiver(null, batFilter)
                 if (batteryStatus != null) {
-                    final int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                    final int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                    batteryPct = (scale == 0) ? 0 : level / (float) scale;
-
-                    int newChargePlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1);
-
+                    val level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
+                    val scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1)
+                    batteryPct = if (scale == 0) 0f else level / scale.toFloat()
+                    val newChargePlug = intent.getIntExtra(BatteryManager.EXTRA_PLUGGED, -1)
                     if (newChargePlug != chargePlug) {
                         // enforce it
-                        chargePlug = newChargePlug;
-                        invalidate();
+                        chargePlug = newChargePlug
+                        invalidate()
                     }
-
                 }
             }
-        };
-
-        private String mHourInstrument;
-        private String mMinuteInstrument;
-
-        private Bitmap ambientBaseBitmap;
-        private Bitmap normalBaseBitmap;
-
-        private Engine() {
         }
-
-        @Override
-        public void onCreate(SurfaceHolder holder) {
-            super.onCreate(holder);
-
-            mHourInstrument = MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT;
-            mMinuteInstrument = MusicWatchFaceUtil.MINUTE_INSTRUMENT_DEFAULT;
-
-            tzFilter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-            batFilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-
-            setWatchFaceStyle(new WatchFaceStyle.Builder(MusicWatchFace.this)
-                    .build());
-
-            final Resources resources = MusicWatchFace.this.getResources();
-
-            mBackgroundPaintAmbient = new Paint();
-            mBackgroundPaintAmbient.setColor(ResourcesCompat.getColor(resources, R.color.analog_background_ambient, null));
-
-            mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_background, null));
-
-            mHandPaint = new Paint();
-            mHandPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_hands, null));
-            mHandPaint.setStrokeWidth(resources.getDimension(R.dimen.analog_hand_stroke));
-            mHandPaint.setAntiAlias(true);
-            mHandPaint.setStrokeCap(Paint.Cap.ROUND);
-            mHandPaint.setTextSize(24);
-
-            mStaffPaint = new Paint();
-            mStaffPaint.setColor(ResourcesCompat.getColor(resources, R.color.analog_hands, null));
-            mStaffPaint.setStrokeWidth(resources.getDimension(R.dimen.staff_stroke));
-            mStaffPaint.setAntiAlias(true);
-            mStaffPaint.setStrokeCap(Paint.Cap.ROUND);
-
-            mTime = new GregorianCalendar();
-
+        private var mHourInstrument: String? = null
+        private var mMinuteInstrument: String? = null
+        private var ambientBaseBitmap: Bitmap? = null
+        private var normalBaseBitmap: Bitmap? = null
+        override fun onCreate(holder: SurfaceHolder) {
+            super.onCreate(holder)
+            mHourInstrument = MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
+            mMinuteInstrument = MusicWatchFaceUtil.MINUTE_INSTRUMENT_DEFAULT
+            tzFilter = IntentFilter(Intent.ACTION_TIMEZONE_CHANGED)
+            batFilter = IntentFilter(Intent.ACTION_BATTERY_CHANGED)
+            setWatchFaceStyle(
+                WatchFaceStyle.Builder(this@MusicWatchFace)
+                    .build()
+            )
+            val resources = this@MusicWatchFace.resources
+            mBackgroundPaintAmbient = Paint()
+            mBackgroundPaintAmbient!!.color =
+                ResourcesCompat.getColor(resources, R.color.analog_background_ambient, null)
+            mBackgroundPaint = Paint()
+            mBackgroundPaint!!.color =
+                ResourcesCompat.getColor(resources, R.color.analog_background, null)
+            mHandPaint = Paint()
+            mHandPaint!!.color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
+            mHandPaint!!.strokeWidth = resources.getDimension(R.dimen.analog_hand_stroke)
+            mHandPaint!!.isAntiAlias = true
+            mHandPaint!!.strokeCap = Paint.Cap.ROUND
+            mHandPaint!!.textSize = 24f
+            mStaffPaint = Paint()
+            mStaffPaint!!.color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
+            mStaffPaint!!.strokeWidth = resources.getDimension(R.dimen.staff_stroke)
+            mStaffPaint!!.isAntiAlias = true
+            mStaffPaint!!.strokeCap = Paint.Cap.ROUND
+            mTime = GregorianCalendar()
             try {
-                createHands();
-
-                threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc);
-                sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc);
-                nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc);
-                twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc);
-
-                hourSvg = SVG.getFromResource(getResources(), R.raw.hour);
-
-                noteSvg = SVG.getFromResource(getResources(), R.raw.note);
-                noteAcSvg = SVG.getFromResource(getResources(), R.raw.note_ac);
-            } catch (SVGParseException ex) {
-                ex.printStackTrace();
+                createHands()
+                threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc)
+                sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc)
+                nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc)
+                twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc)
+                hourSvg = SVG.getFromResource(getResources(), R.raw.hour)
+                noteSvg = SVG.getFromResource(getResources(), R.raw.note)
+                noteAcSvg = SVG.getFromResource(getResources(), R.raw.note_ac)
+            } catch (ex: SVGParseException) {
+                ex.printStackTrace()
             }
-            initFormats();
-
-            Log.d(TAG, "=== Loading all config bitmaps ===");
-            MusicWatchFaceConfigActivity.buildAllBitmaps(getResources(), getApplicationContext());
-            Log.d(TAG, "=== Done loading all config bitmaps ===");
-
-            MusicWatchFaceUtil.addDataListener(getApplicationContext(), this);
-            updateConfigDataItemAndUiOnStartup();
+            initFormats()
+            Log.d(TAG, "=== Loading all config bitmaps ===")
+            buildAllBitmaps(getResources(), applicationContext)
+            Log.d(TAG, "=== Done loading all config bitmaps ===")
+            addDataListener(applicationContext, this)
+            updateConfigDataItemAndUiOnStartup()
         }
 
-        private void initFormats() {
-            mDateFormat = new SimpleDateFormat(getResources().getString(R.string.date_format), Locale.getDefault());
+        private fun initFormats() {
+            mDateFormat =
+                SimpleDateFormat(resources.getString(R.string.date_format), Locale.getDefault())
         }
 
-        private SVG createHand(MusicWatchFaceUtil.HandKind kind, boolean ambient) throws SVGParseException {
-            @SuppressLint("DiscouragedApi")
-            int id = getResources().getIdentifier((kind == MusicWatchFaceUtil.HandKind.HOUR ?
-                    mHourInstrument : mMinuteInstrument) +
-                    (ambient ? "_ambient" : "") + "_hand", "raw", getPackageName());
-            return id == 0 ? null : SVG.getFromResource(getResources(), id);
+        @Throws(SVGParseException::class)
+        private fun createHand(kind: HandKind, ambient: Boolean): SVG? {
+            @SuppressLint("DiscouragedApi") val id = resources.getIdentifier(
+                (if (kind == HandKind.HOUR) mHourInstrument else mMinuteInstrument) +
+                        (if (ambient) "_ambient" else "") + "_hand", "raw", packageName
+            )
+            return if (id == 0) null else SVG.getFromResource(resources, id)
         }
 
-        private void createHands() throws SVGParseException {
-            hourHandSvg = createHand(MusicWatchFaceUtil.HandKind.HOUR, false);
-            minuteHandSvg = createHand(MusicWatchFaceUtil.HandKind.MINUTE, false);
-            ambientHourHandSvg = createHand(MusicWatchFaceUtil.HandKind.HOUR, true);
-            ambientMinuteHandSvg = createHand(MusicWatchFaceUtil.HandKind.MINUTE, true);
+        @Throws(SVGParseException::class)
+        private fun createHands() {
+            hourHandSvg = createHand(HandKind.HOUR, false)
+            minuteHandSvg = createHand(HandKind.MINUTE, false)
+            ambientHourHandSvg = createHand(HandKind.HOUR, true)
+            ambientMinuteHandSvg = createHand(HandKind.MINUTE, true)
         }
 
-        @Override
-        public void onApplyWindowInsets(WindowInsets wi) {
-            isRound = wi.isRound();
-            ambientBaseBitmap = null;
-            normalBaseBitmap = null;
+        override fun onApplyWindowInsets(wi: WindowInsets) {
+            isRound = wi.isRound
+            ambientBaseBitmap = null
+            normalBaseBitmap = null
         }
 
-        @Override
-        public void onDestroy() {
-            mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
-            MusicWatchFaceUtil.removeDataListener(getApplicationContext(), this);
-            super.onDestroy();
+        override fun onDestroy() {
+            mUpdateTimeHandler.removeMessages(Companion.MSG_UPDATE_TIME)
+            removeDataListener(applicationContext, this)
+            super.onDestroy()
         }
 
-        @Override
-        public void onPropertiesChanged(Bundle properties) {
-            super.onPropertiesChanged(properties);
-            mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false);
+        override fun onPropertiesChanged(properties: Bundle) {
+            super.onPropertiesChanged(properties)
+            mLowBitAmbient = properties.getBoolean(PROPERTY_LOW_BIT_AMBIENT, false)
         }
 
-        @Override
-        public void onTimeTick() {
-            super.onTimeTick();
-            invalidate();
+        override fun onTimeTick() {
+            super.onTimeTick()
+            invalidate()
         }
 
-        @Override
-        public void onAmbientModeChanged(boolean inAmbientMode) {
-            super.onAmbientModeChanged(inAmbientMode);
+        override fun onAmbientModeChanged(inAmbientMode: Boolean) {
+            super.onAmbientModeChanged(inAmbientMode)
             if (mAmbient != inAmbientMode) {
-                mAmbient = inAmbientMode;
+                mAmbient = inAmbientMode
                 if (mLowBitAmbient) {
-                    mHandPaint.setAntiAlias(!inAmbientMode);
+                    mHandPaint!!.isAntiAlias = !inAmbientMode
                 }
-                invalidate();
+                invalidate()
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
-            updateTimer();
+            updateTimer()
         }
 
         // Draw hours
-        private void draw12369(Canvas canvas) {
+        private fun draw12369(canvas: Canvas) {
             // 12
-            canvas.drawBitmap(majorBitmap[0],
-                    center.x - twelveOCSvg.getDocumentWidth() * scales[0] / 2f,
-                    center.y * MARK_OFFSET_RATIO,
-                    null);
+            canvas.drawBitmap(
+                majorBitmap[0]!!,
+                center!!.x - twelveOCSvg!!.documentWidth * scales[0] / 2f,
+                center!!.y * Companion.MARK_OFFSET_RATIO,
+                null
+            )
 
             // 3
-            canvas.drawBitmap(majorBitmap[1],
-                    center.x * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.x - threeOCSvg.getDocumentWidth() * scales[1],
-                    center.y - threeOCSvg.getDocumentHeight() * scales[1] / 2f,
-                    null);
+            canvas.drawBitmap(
+                majorBitmap[1]!!,
+                center!!.x * (2 - Companion.MARK_RATIO - Companion.MARK_OFFSET_RATIO) + markBounds!!.x - threeOCSvg!!.documentWidth * scales[1],
+                center!!.y - threeOCSvg!!.documentHeight * scales[1] / 2f,
+                null
+            )
 
             // 6
-            canvas.drawBitmap(majorBitmap[2],
-                    center.x - sixOCSvg.getDocumentWidth() * scales[2] / 2f,
-                    center.y * (2 - MARK_RATIO - MARK_OFFSET_RATIO) + markBounds.y - sixOCSvg.getDocumentHeight() * scales[2],
-                    null);
+            canvas.drawBitmap(
+                majorBitmap[2]!!,
+                center!!.x - sixOCSvg!!.documentWidth * scales[2] / 2f,
+                center!!.y * (2 - Companion.MARK_RATIO - Companion.MARK_OFFSET_RATIO) + markBounds!!.y - sixOCSvg!!.documentHeight * scales[2],
+                null
+            )
 
             // 9
-            canvas.drawBitmap(majorBitmap[3],
-                    center.x * MARK_OFFSET_RATIO,
-                    center.y - nineOCSvg.getDocumentHeight() * scales[3] / 2f,
-                    null);
+            canvas.drawBitmap(
+                majorBitmap[3]!!,
+                center!!.x * Companion.MARK_OFFSET_RATIO,
+                center!!.y - nineOCSvg!!.documentHeight * scales[3] / 2f,
+                null
+            )
         }
 
-        @Override
-        public void onDraw(Canvas canvas, Rect bounds) {
-            Date now = new Date();
+        override fun onDraw(canvas: Canvas, bounds: Rect) {
+            val now = Date()
             //now.setHours(19);now.setMinutes(50);
-            mTime.setTime(now);
-
+            mTime!!.time = now
             if (mAmbient) {
                 if (ambientBaseBitmap == null) {
-                    Log.d(TAG, "Creating ambient base bitmap");
-                    ambientBaseBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
-                    final Canvas abc = new Canvas(ambientBaseBitmap);
-                    abc.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaintAmbient);
+                    Log.d(TAG, "Creating ambient base bitmap")
+                    ambientBaseBitmap =
+                        Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
+                    val abc = Canvas(ambientBaseBitmap!!)
+                    abc.drawRect(
+                        0f,
+                        0f,
+                        canvas.width.toFloat(),
+                        canvas.height.toFloat(),
+                        mBackgroundPaintAmbient!!
+                    )
                 }
-                canvas.drawBitmap(ambientBaseBitmap, 0f, 0f, null);
+                canvas.drawBitmap(ambientBaseBitmap!!, 0f, 0f, null)
             } else {
                 if (normalBaseBitmap == null) {
-                    Log.d(TAG, "Creating normal base bitmap");
-                    normalBaseBitmap = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
-                    final Canvas nbc = new Canvas(normalBaseBitmap);
-                    nbc.drawRect(0, 0, canvas.getWidth(), canvas.getHeight(), mBackgroundPaint);
-                    draw12369(nbc);
-
-                    final PointF[] markHourLocations = calcMarkHourLocations(majorBitmap[4]);
-
-                    for (PointF markHourLocation : markHourLocations) {
-                        nbc.drawBitmap(majorBitmap[4], markHourLocation.x, markHourLocation.y, null);
+                    Log.d(TAG, "Creating normal base bitmap")
+                    normalBaseBitmap =
+                        Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
+                    val nbc = Canvas(normalBaseBitmap!!)
+                    nbc.drawRect(
+                        0f,
+                        0f,
+                        canvas.width.toFloat(),
+                        canvas.height.toFloat(),
+                        mBackgroundPaint!!
+                    )
+                    draw12369(nbc)
+                    val markHourLocations = calcMarkHourLocations(majorBitmap[4])
+                    for (markHourLocation in markHourLocations) {
+                        nbc.drawBitmap(
+                            majorBitmap[4]!!,
+                            markHourLocation!!.x,
+                            markHourLocation.y,
+                            null
+                        )
                     }
-                    displayBatteryStaff(nbc);
+                    displayBatteryStaff(nbc)
                 }
-                canvas.drawBitmap(normalBaseBitmap, 0f, 0f, null);
-
-                displayDate(canvas, now);
+                canvas.drawBitmap(normalBaseBitmap!!, 0f, 0f, null)
+                displayDate(canvas, now)
             }
-
             if (!mAmbient) {
-                displayBattery(canvas);
+                displayBattery(canvas)
 
                 // second hand
-                float secRot = mTime.get(GregorianCalendar.SECOND) / 30f * (float) Math.PI;
-
-                float secX = (float) Math.sin(secRot) * secLength;
-                float secY = (float) -Math.cos(secRot) * secLength;
-                canvas.drawLine(center.x, center.y, center.x + secX, center.y + secY, mHandPaint);
+                val secRot = mTime!![GregorianCalendar.SECOND] / 30f * Math.PI.toFloat()
+                val secX = Math.sin(secRot.toDouble()).toFloat() * secLength
+                val secY = -Math.cos(secRot.toDouble()).toFloat() * secLength
+                canvas.drawLine(
+                    center!!.x,
+                    center!!.y,
+                    center!!.x + secX,
+                    center!!.y + secY,
+                    mHandPaint!!
+                )
 
                 // minute hand
-                canvas.save();
-                renderHand(canvas,
-                        mTime.get(GregorianCalendar.MINUTE) * 6,
-                        minuteHandRect,
-                        minuteRotationPoint,
-                        minuteHandSvg);
-                canvas.restore();
+                canvas.save()
+                renderHand(
+                    canvas,
+                    (
+                            mTime!![GregorianCalendar.MINUTE] * 6).toFloat(),
+                    minuteHandRect,
+                    minuteRotationPoint,
+                    minuteHandSvg
+                )
+                canvas.restore()
 
                 // hour hand
-                canvas.save();
-                renderHand(canvas,
-                        (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                        hourHandRect,
-                        hourRotationPoint,
-                        hourHandSvg);
-                canvas.restore();
+                canvas.save()
+                renderHand(
+                    canvas,
+                    (mTime!![GregorianCalendar.HOUR] + mTime!![GregorianCalendar.MINUTE] / 60f) * 30,
+                    hourHandRect,
+                    hourRotationPoint,
+                    hourHandSvg
+                )
+                canvas.restore()
             } else {
                 // minute hand
-                canvas.save();
-                renderHand(canvas,
-                        mTime.get(GregorianCalendar.MINUTE) * 6,
-                        minuteHandRect,
-                        minuteRotationPoint,
-                        ambientMinuteHandSvg);
-                canvas.restore();
+                canvas.save()
+                renderHand(
+                    canvas,
+                    (
+                            mTime!![GregorianCalendar.MINUTE] * 6).toFloat(),
+                    minuteHandRect,
+                    minuteRotationPoint,
+                    ambientMinuteHandSvg
+                )
+                canvas.restore()
 
                 // hour hand
-                canvas.save();
-                renderHand(canvas,
-                        (mTime.get(GregorianCalendar.HOUR) + (mTime.get(GregorianCalendar.MINUTE) / 60f)) * 30,
-                        hourHandRect,
-                        hourRotationPoint,
-                        ambientHourHandSvg);
-                canvas.restore();
+                canvas.save()
+                renderHand(
+                    canvas,
+                    (mTime!![GregorianCalendar.HOUR] + mTime!![GregorianCalendar.MINUTE] / 60f) * 30,
+                    hourHandRect,
+                    hourRotationPoint,
+                    ambientHourHandSvg
+                )
+                canvas.restore()
             }
         }
 
-        private void renderHand(Canvas canvas,
-                                float angle,
-                                RectF rect,
-                                PointF rotationPoint,
-                                SVG svg) {
-            if (svg == null)
-                return;
-            final PointF p = new PointF(center.x - rotationPoint.x,
-                    center.y - rotationPoint.y);
-            canvas.translate(p.x, p.y);
-            canvas.rotate(angle, rotationPoint.x, rotationPoint.y);
-            svg.renderToCanvas(canvas, rect);
+        private fun renderHand(
+            canvas: Canvas,
+            angle: Float,
+            rect: RectF?,
+            rotationPoint: PointF?,
+            svg: SVG?
+        ) {
+            if (svg == null) return
+            val p = PointF(
+                center!!.x - rotationPoint!!.x,
+                center!!.y - rotationPoint.y
+            )
+            canvas.translate(p.x, p.y)
+            canvas.rotate(angle, rotationPoint.x, rotationPoint.y)
+            svg.renderToCanvas(canvas, rect)
         }
 
-        private void displayDate(Canvas canvas, Date d) {
-            final String dateFormatted = mDateFormat.format(d);
-
-            final Rect bounds = new Rect();
-            mHandPaint.getTextBounds(dateFormatted, 0, dateFormatted.length(), bounds);
-            canvas.drawText(dateFormatted, center.x - bounds.width() / 2f,
-                    center.y * 3 / 2 + bounds.height() / 2f, mHandPaint);
+        private fun displayDate(canvas: Canvas, d: Date) {
+            val dateFormatted = mDateFormat.format(d)
+            val bounds = Rect()
+            mHandPaint!!.getTextBounds(dateFormatted, 0, dateFormatted.length, bounds)
+            canvas.drawText(
+                dateFormatted, center!!.x - bounds.width() / 2f,
+                center!!.y * 3 / 2 + bounds.height() / 2f, mHandPaint!!
+            )
         }
 
-        private void displayBatteryStaff(Canvas canvas) {
-            final float xmin = center.x * (1 + STAFF_X_RATIO_START);
-            final float xmax = center.x * (1 + STAFF_X_RATIO_END);
-            float ycur = center.y * STAFF_Y_RATIO_START;  // ymin
-            final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
-            for (int i = 0; i < 5; i++) {
-                canvas.drawLine(xmin,
-                        ycur,
-                        xmax,
-                        ycur,
-                        mStaffPaint);
-                ycur += ystep;
+        private fun displayBatteryStaff(canvas: Canvas) {
+            val xmin = center!!.x * (1 + Companion.STAFF_X_RATIO_START)
+            val xmax = center!!.x * (1 + Companion.STAFF_X_RATIO_END)
+            var ycur = center!!.y * Companion.STAFF_Y_RATIO_START // ymin
+            val ystep =
+                center!!.y * (Companion.STAFF_Y_RATIO_END - Companion.STAFF_Y_RATIO_START) / 4
+            for (i in 0..4) {
+                canvas.drawLine(
+                    xmin,
+                    ycur,
+                    xmax,
+                    ycur,
+                    mStaffPaint!!
+                )
+                ycur += ystep
             }
         }
 
-        private void displayBattery(Canvas canvas) {
-            final boolean acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC;
-            final boolean usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB;
+        private fun displayBattery(canvas: Canvas) {
+            val acCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_AC
+            val usbCharge = chargePlug == BatteryManager.BATTERY_PLUGGED_USB
             // either
-            final Bitmap noteBmp = (acCharge || usbCharge) ? majorBitmap[6] : majorBitmap[5];
-
-            final float xmin = center.x * (1 + STAFF_X_RATIO_START);
-            final float xmax = center.x * (1 + STAFF_X_RATIO_END);
-            final float ymax = center.y * STAFF_Y_RATIO_END;
-            final float ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4;
-            final int watchBatteryNoteLevel = (int) Math.floor(this.batteryPct * 10);
-            float ynote = ymax - ystep * (watchBatteryNoteLevel / 2f);
-            canvas.drawBitmap(noteBmp,
-                    xmin + (xmax - xmin) * 0.5f - noteBmp.getWidth() / 2.0f,
-                    ynote, mStaffPaint);
+            val noteBmp = if (acCharge || usbCharge) majorBitmap[6] else majorBitmap[5]
+            val xmin = center!!.x * (1 + Companion.STAFF_X_RATIO_START)
+            val xmax = center!!.x * (1 + Companion.STAFF_X_RATIO_END)
+            val ymax = center!!.y * Companion.STAFF_Y_RATIO_END
+            val ystep =
+                center!!.y * (Companion.STAFF_Y_RATIO_END - Companion.STAFF_Y_RATIO_START) / 4
+            val watchBatteryNoteLevel = Math.floor((batteryPct * 10).toDouble()).toInt()
+            val ynote = ymax - ystep * (watchBatteryNoteLevel / 2f)
+            canvas.drawBitmap(
+                noteBmp!!,
+                xmin + (xmax - xmin) * 0.5f - noteBmp.width / 2.0f,
+                ynote, mStaffPaint
+            )
         }
 
-        @Override
-        public void onVisibilityChanged(boolean visible) {
-            super.onVisibilityChanged(visible);
-
+        override fun onVisibilityChanged(visible: Boolean) {
+            super.onVisibilityChanged(visible)
             if (visible) {
-                registerReceivers();
-
-                mTime.setTimeZone(TimeZone.getDefault());
-
-                initFormats();
+                registerReceivers()
+                mTime!!.timeZone = TimeZone.getDefault()
+                initFormats()
             } else {
-                unregisterReceivers();
+                unregisterReceivers()
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
             // whether we're in ambient mode), so we may need to start or stop the timer.
-            updateTimer();
+            updateTimer()
         }
 
-        private void registerReceivers() {
+        private fun registerReceivers() {
             if (mRegisteredTimeZoneReceiver) {
-                return;
+                return
             }
-            mRegisteredTimeZoneReceiver = true;
-            MusicWatchFace.this.registerReceiver(mTimeZoneReceiver, tzFilter);
-            MusicWatchFace.this.registerReceiver(mBatteryReceiver, batFilter);
+            mRegisteredTimeZoneReceiver = true
+            this@MusicWatchFace.registerReceiver(mTimeZoneReceiver, tzFilter)
+            this@MusicWatchFace.registerReceiver(mBatteryReceiver, batFilter)
         }
 
-        private void unregisterReceivers() {
+        private fun unregisterReceivers() {
             if (!mRegisteredTimeZoneReceiver) {
-                return;
+                return
             }
-            mRegisteredTimeZoneReceiver = false;
-            MusicWatchFace.this.unregisterReceiver(mTimeZoneReceiver);
-            MusicWatchFace.this.unregisterReceiver(mBatteryReceiver);
+            mRegisteredTimeZoneReceiver = false
+            unregisterReceiver(mTimeZoneReceiver)
+            unregisterReceiver(mBatteryReceiver)
         }
 
         /**
-         * Starts the {@link #mUpdateTimeHandler} timer if it should be running and isn't currently
+         * Starts the [.mUpdateTimeHandler] timer if it should be running and isn't currently
          * or stops it if it shouldn't be running but currently is.
          */
-        private void updateTimer() {
-            mUpdateTimeHandler.removeMessages(MSG_UPDATE_TIME);
+        private fun updateTimer() {
+            mUpdateTimeHandler.removeMessages(Companion.MSG_UPDATE_TIME)
             if (shouldTimerBeRunning()) {
-                mUpdateTimeHandler.sendEmptyMessage(MSG_UPDATE_TIME);
+                mUpdateTimeHandler.sendEmptyMessage(Companion.MSG_UPDATE_TIME)
             }
         }
 
-        @Override
-        public void onSurfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-            super.onSurfaceChanged(holder, format, width, height);
-            center = new PointF(width / 2f, height / 2f);
-
-            secLength = center.x - 20;
-
-            hourRotationPoint = new PointF(center.x * HOUR_HAND_RATIO / 2,
-                    center.y * HOUR_HAND_RATIO * NAIL_RATIO);
-            minuteRotationPoint = new PointF(center.x * MINUTE_HAND_RATIO / 2,
-                    center.y * MINUTE_HAND_RATIO * NAIL_RATIO);
-
-            hourHandRect = new RectF(0, 0,
-                    center.x * HOUR_HAND_RATIO,
-                    center.y * HOUR_HAND_RATIO);
-
-            minuteHandRect = new RectF(0, 0,
-                    center.x * MINUTE_HAND_RATIO,
-                    center.y * MINUTE_HAND_RATIO);
-
-            markBounds = new PointF(MARK_RATIO * center.x, MARK_RATIO * center.y);
-            mark12Bounds = new PointF(MARK12_RATIO * center.x, MARK12_RATIO * center.y);
-            markHourBounds = new PointF(MARK_HOUR_RATIO * center.x, MARK_HOUR_RATIO * center.y);
-            markNoteBounds = new PointF(MARK_NOTE_RATIO * center.x, MARK_NOTE_RATIO * center.y);
-
-            createBitmapsFromSvgs();
-
-            ambientBaseBitmap = null;
-            normalBaseBitmap = null;
+        override fun onSurfaceChanged(holder: SurfaceHolder, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            center = PointF(width / 2f, height / 2f)
+            secLength = center!!.x - 20
+            hourRotationPoint = PointF(
+                center!!.x * Companion.HOUR_HAND_RATIO / 2,
+                center!!.y * Companion.HOUR_HAND_RATIO * Companion.NAIL_RATIO
+            )
+            minuteRotationPoint = PointF(
+                center!!.x * Companion.MINUTE_HAND_RATIO / 2,
+                center!!.y * Companion.MINUTE_HAND_RATIO * Companion.NAIL_RATIO
+            )
+            hourHandRect = RectF(
+                0f, 0f,
+                center!!.x * Companion.HOUR_HAND_RATIO,
+                center!!.y * Companion.HOUR_HAND_RATIO
+            )
+            minuteHandRect = RectF(
+                0f, 0f,
+                center!!.x * Companion.MINUTE_HAND_RATIO,
+                center!!.y * Companion.MINUTE_HAND_RATIO
+            )
+            markBounds =
+                PointF(Companion.MARK_RATIO * center!!.x, Companion.MARK_RATIO * center!!.y)
+            mark12Bounds =
+                PointF(Companion.MARK12_RATIO * center!!.x, Companion.MARK12_RATIO * center!!.y)
+            markHourBounds = PointF(
+                Companion.MARK_HOUR_RATIO * center!!.x,
+                Companion.MARK_HOUR_RATIO * center!!.y
+            )
+            markNoteBounds = PointF(
+                Companion.MARK_NOTE_RATIO * center!!.x,
+                Companion.MARK_NOTE_RATIO * center!!.y
+            )
+            createBitmapsFromSvgs()
+            ambientBaseBitmap = null
+            normalBaseBitmap = null
         }
 
-        private void createBitmapsFromSvgs() {
-            majorBitmap = new Bitmap[7];
-            scales = new float[7];
-
-            createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false);
-            createBitmapFromSvg(threeOCSvg, markBounds, 1, false);
-            createBitmapFromSvg(sixOCSvg, markBounds, 2, false);
-            createBitmapFromSvg(nineOCSvg, markBounds, 3, false);
-            createBitmapFromSvg(hourSvg, markHourBounds, 4, false);
-            createBitmapFromSvg(noteSvg, markNoteBounds, 5, true);
-            createBitmapFromSvg(noteAcSvg, markNoteBounds, 6, true);
+        private fun createBitmapsFromSvgs() {
+            createBitmapFromSvg(twelveOCSvg, mark12Bounds, 0, false)
+            createBitmapFromSvg(threeOCSvg, markBounds, 1, false)
+            createBitmapFromSvg(sixOCSvg, markBounds, 2, false)
+            createBitmapFromSvg(nineOCSvg, markBounds, 3, false)
+            createBitmapFromSvg(hourSvg, markHourBounds, 4, false)
+            createBitmapFromSvg(noteSvg, markNoteBounds, 5, true)
+            createBitmapFromSvg(noteAcSvg, markNoteBounds, 6, true)
         }
 
-        private PointF[] calcMarkHourLocations(Bitmap bitmap) {
-            final PointF[] markHourLocations = new PointF[8];
-            final float hourRatio = isRound ? MARK_HOUR_RATIO : 0;
-            final float offset = 1 - hourRatio - MARK_OFFSET_RATIO;
-            final PointF halfSize = new PointF(bitmap.getWidth() / 2f, bitmap.getHeight() / 2f);
-            for (int i = 0; i < HOUR_ANGLES.length; i++) {
-                markHourLocations[i] = new PointF(center.x * (float) (1 + Math.sin(HOUR_ANGLES[i]) * offset) - halfSize.x,
-                        center.y * (float) (1 - Math.cos(HOUR_ANGLES[i]) * offset) - halfSize.y);
+        private fun calcMarkHourLocations(bitmap: Bitmap?): Array<PointF?> {
+            val markHourLocations = arrayOfNulls<PointF>(8)
+            val hourRatio: Float = if (isRound) Companion.MARK_HOUR_RATIO else 0f
+            val offset = 1 - hourRatio - Companion.MARK_OFFSET_RATIO
+            val halfSize = PointF(bitmap!!.width / 2f, bitmap.height / 2f)
+            for (i in HOUR_ANGLES.indices) {
+                markHourLocations[i] = PointF(
+                    center!!.x * (1 + Math.sin(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.x,
+                    center!!.y * (1 - Math.cos(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.y
+                )
             }
-            return markHourLocations;
+            return markHourLocations
         }
 
-        private void createBitmapFromSvg(SVG svg, PointF bounds, int idx, boolean isForcedY) {
-            scales[idx] = isForcedY ? bounds.y / svg.getDocumentHeight() :
-                    Math.min(bounds.x / svg.getDocumentWidth(), bounds.y / svg.getDocumentHeight());
-
-            majorBitmap[idx] = Bitmap.createBitmap(Math.round(svg.getDocumentWidth() * scales[idx]),
-                    Math.round(svg.getDocumentHeight() * scales[idx]),
-                    Bitmap.Config.ARGB_8888);
-
-            Canvas canvas = new Canvas(majorBitmap[idx]);
-            canvas.scale(scales[idx], scales[idx]);
-            svg.renderToCanvas(canvas);
+        private fun createBitmapFromSvg(svg: SVG?, bounds: PointF?, idx: Int, isForcedY: Boolean) {
+            scales[idx] = if (isForcedY) bounds!!.y / svg!!.documentHeight else Math.min(
+                bounds!!.x / svg!!.documentWidth, bounds.y / svg.documentHeight
+            )
+            majorBitmap[idx] = Bitmap.createBitmap(
+                Math.round(svg.documentWidth * scales[idx]),
+                Math.round(svg.documentHeight * scales[idx]),
+                Bitmap.Config.ARGB_8888
+            )
+            val canvas = Canvas(majorBitmap[idx]!!)
+            canvas.scale(scales[idx], scales[idx])
+            svg.renderToCanvas(canvas)
         }
 
         /**
-         * Returns whether the {@link #mUpdateTimeHandler} timer should be running. The timer should
+         * Returns whether the [.mUpdateTimeHandler] timer should be running. The timer should
          * only run when we're visible and in interactive mode.
          */
-        private boolean shouldTimerBeRunning() {
-            return isVisible() && !isInAmbientMode();
+        private fun shouldTimerBeRunning(): Boolean {
+            return isVisible && !isInAmbientMode
         }
 
-        private void updateConfigDataItemAndUiOnStartup() {
-            MusicWatchFaceUtil.fetchConfigDataMap(getApplicationContext(),
-                    startupConfig -> {
-                        // If the DataItem hasn't been created yet or some keys are missing,
-                        // use the default values.
-
-                        final String initialHourInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT);
-                        final String initialMinuteInstrument = startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT);
-                        Log.d(TAG, "!!!!!! Fetched startup config: " + initialHourInstrument + "/" + initialMinuteInstrument);
-                        MusicWatchFaceUtil.setDefaultValuesForMissingConfigKeys(startupConfig);
-
-                        if (initialHourInstrument == null || initialMinuteInstrument == null) {
-                            Log.d(TAG, "Completing config initialization with: " +
-                                    startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" +
-                                    startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT));
-                            MusicWatchFaceUtil.putConfigDataItem(getApplicationContext(),
-                                    startupConfig);
-                        }
-
-                        updateUiForConfigDataMap(startupConfig);
-                    }
-            );
+        private fun updateConfigDataItemAndUiOnStartup() {
+            fetchConfigDataMap(
+                applicationContext
+            ) { startupConfig: DataMap ->
+                // If the DataItem hasn't been created yet or some keys are missing,
+                // use the default values.
+                val initialHourInstrument =
+                    startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)
+                val initialMinuteInstrument =
+                    startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)
+                Log.d(
+                    TAG,
+                    "!!!!!! Fetched startup config: $initialHourInstrument/$initialMinuteInstrument"
+                )
+                setDefaultValuesForMissingConfigKeys(startupConfig)
+                if (initialHourInstrument == null || initialMinuteInstrument == null) {
+                    Log.d(
+                        TAG, "Completing config initialization with: " +
+                                startupConfig.getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" +
+                                startupConfig.getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)
+                    )
+                    putConfigDataItem(
+                        applicationContext,
+                        startupConfig
+                    )
+                }
+                updateUiForConfigDataMap(startupConfig)
+            }
         }
 
-        private void updateUiForConfigDataMap(DataMap config) {
+        private fun updateUiForConfigDataMap(config: DataMap) {
             if (config.containsKey(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)) {
-                final String instrument = config.get(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT);
-                if (mHourInstrument == null || !mHourInstrument.equals(instrument)) {
-                    setHourInstrument(instrument);
-                    Log.d(TAG, "Invalidating after new hour instrument: " + instrument);
-                    invalidate();
+                val instrument = config.get<String>(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT)
+                if (mHourInstrument == null || mHourInstrument != instrument) {
+                    setHourInstrument(instrument)
+                    Log.d(TAG, "Invalidating after new hour instrument: $instrument")
+                    invalidate()
                 } else {
-                    Log.d(TAG, "Same hour instrument, no change in config");
+                    Log.d(TAG, "Same hour instrument, no change in config")
                 }
             }
             if (config.containsKey(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)) {
-                final String instrument = config.get(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT);
-                if (mMinuteInstrument == null || !mMinuteInstrument.equals(instrument)) {
-                    setMinuteInstrument(instrument);
-                    Log.d(TAG, "Invalidating after new minute instrument: " + instrument);
-                    invalidate();
+                val instrument = config.get<String>(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)
+                if (mMinuteInstrument == null || mMinuteInstrument != instrument) {
+                    setMinuteInstrument(instrument)
+                    Log.d(TAG, "Invalidating after new minute instrument: $instrument")
+                    invalidate()
                 } else {
-                    Log.d(TAG, "Same minute instrument, no change in config");
+                    Log.d(TAG, "Same minute instrument, no change in config")
                 }
             }
         }
 
-        private void setHourInstrument(String instrument) {
+        private fun setHourInstrument(instrument: String?) {
             try {
-                if (mHourInstrument == null || !mHourInstrument.equals(instrument)) {
-                    mHourInstrument = instrument;
-                    Log.i(TAG, "Hands to be created for hand instrument: " + instrument);
-                    createHands();
+                if (mHourInstrument == null || mHourInstrument != instrument) {
+                    mHourInstrument = instrument
+                    Log.i(TAG, "Hands to be created for hand instrument: $instrument")
+                    createHands()
                 }
-            } catch (SVGParseException e) {
-                e.printStackTrace();
+            } catch (e: SVGParseException) {
+                e.printStackTrace()
             }
         }
 
-        private void setMinuteInstrument(String instrument) {
+        private fun setMinuteInstrument(instrument: String?) {
             try {
-                if (mMinuteInstrument == null || !mMinuteInstrument.equals(instrument)) {
-                    mMinuteInstrument = instrument;
-                    Log.i(TAG, "Hands to be created for minute instrument: " + instrument);
-                    createHands();
+                if (mMinuteInstrument == null || mMinuteInstrument != instrument) {
+                    mMinuteInstrument = instrument
+                    Log.i(TAG, "Hands to be created for minute instrument: $instrument")
+                    createHands()
                 }
-            } catch (SVGParseException e) {
-                e.printStackTrace();
+            } catch (e: SVGParseException) {
+                e.printStackTrace()
             }
         }
 
-        @Override
-        public void onDataChanged(@NonNull DataEventBuffer dataEvents) {
-            Log.d(TAG, "onDataChanged: " + dataEvents);
-
-            for (DataEvent dataEvent : dataEvents) {
-                if (dataEvent.getType() != DataEvent.TYPE_CHANGED) {
-                    continue;
+        override fun onDataChanged(dataEvents: DataEventBuffer) {
+            Log.d(TAG, "onDataChanged: $dataEvents")
+            for (dataEvent in dataEvents) {
+                if (dataEvent.type != DataEvent.TYPE_CHANGED) {
+                    continue
                 }
-
-                DataItem dataItem = dataEvent.getDataItem();
-                if (!Objects.equals(dataItem.getUri().getPath(), MusicWatchFaceUtil.PATH_WITH_FEATURE)) {
-                    continue;
+                val dataItem = dataEvent.dataItem
+                if (dataItem.uri.path != MusicWatchFaceUtil.PATH_WITH_FEATURE) {
+                    continue
                 }
-
-                DataMapItem dataMapItem = DataMapItem.fromDataItem(dataItem);
-                DataMap config = dataMapItem.getDataMap();
-
-                updateUiForConfigDataMap(config);
+                val dataMapItem = DataMapItem.fromDataItem(dataItem)
+                val config = dataMapItem.dataMap
+                updateUiForConfigDataMap(config)
             }
         }
+    }
+
+    companion object {
+        private const val TAG = "MusicWatchFace"
+
+        /**
+         * Update rate in milliseconds for interactive mode. We update once a second to advance the
+         * second hand.
+         */
+        private val INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1)
+
+        const val MSG_UPDATE_TIME = 0
+
+        // Hands
+        const val HOUR_HAND_RATIO = 0.90f
+        const val MINUTE_HAND_RATIO = 1.15f
+
+        // Where is the nail on the hands?
+        const val NAIL_RATIO = 0.7f
+
+        // 12 o'clock size
+        const val MARK12_RATIO = 0.35f
+
+        // 3, 6, 9 o'clock mark size
+        const val MARK_RATIO = 0.21f
+
+        // offset of marks from the border
+        const val MARK_OFFSET_RATIO = 0.1f
+
+        // 1, 2, 4, 5, 7, 8, 10, 11 o'clock size
+        const val MARK_HOUR_RATIO = 0.04f
+        const val STAFF_X_RATIO_START = 0.35f
+        const val STAFF_X_RATIO_END = 0.55f
+        const val STAFF_Y_RATIO_START = 0.45f
+        const val STAFF_Y_RATIO_END = 0.75f
+
+        // 0.5 0.575 0.65 0.725 0.8
+        // battery note size
+        const val MARK_NOTE_RATIO = (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4
+
+        val HOUR_ANGLES = doubleArrayOf(
+            30 * Math.PI / 180,
+            60 * Math.PI / 180,
+            120 * Math.PI / 180,
+            150 * Math.PI / 180,
+            210 * Math.PI / 180,
+            240 * Math.PI / 180,
+            300 * Math.PI / 180,
+            330 * Math.PI / 180
+        )
     }
 }
