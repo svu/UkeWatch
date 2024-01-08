@@ -72,21 +72,20 @@ class MusicWatchFaceConfigActivity : Activity() {
         mHeader = findViewById(R.id.header)
         mListView = preparePicker()
         mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT
-        fetchConfigDataMap(applicationContext,
-            FetchConfigDataMapCallback { config: DataMap ->
-                val hi = config.getString(
-                    MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                    MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
-                )
-                val mi = config.getString(
-                    MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                    MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
-                )
-                Log.i(TAG, "Initial set of instruments: $hi/$mi")
-                mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT] = hi
-                mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT] = mi
-                scrollToSelected(hi, mListView)
-            })
+        fetchConfigDataMap(applicationContext, FetchConfigDataMapCallback { config: DataMap ->
+            val hi = config.getString(
+                MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
+                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
+            )
+            val mi = config.getString(
+                MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
+                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
+            )
+            Log.i(TAG, "Initial set of instruments: $hi/$mi")
+            mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT] = hi
+            mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT] = mi
+            scrollToSelected(hi, mListView)
+        })
     }
 
     private fun scrollToSelected(
@@ -120,13 +119,11 @@ class MusicWatchFaceConfigActivity : Activity() {
             requestFocus()
             setOnGenericMotionListener(OnGenericMotionListener { v, ev ->
                 with(ev) {
-                    if (action == MotionEvent.ACTION_SCROLL &&
-                        isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
-                    ) {
-                        val delta = -getAxisValue(MotionEventCompat.AXIS_SCROLL) *
-                                ViewConfigurationCompat.getScaledVerticalScrollFactor(
-                                    ViewConfiguration.get(ctx), ctx
-                                )
+                    if (action == MotionEvent.ACTION_SCROLL && isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
+                        val delta =
+                            -getAxisValue(MotionEventCompat.AXIS_SCROLL) * ViewConfigurationCompat.getScaledVerticalScrollFactor(
+                                ViewConfiguration.get(ctx), ctx
+                            )
                         v.scrollBy(0, delta.roundToInt())
                         return@OnGenericMotionListener true
                     }
@@ -151,10 +148,10 @@ class MusicWatchFaceConfigActivity : Activity() {
                 mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT]!!
             )
             Log.i(
-                TAG, "Instrument just overwritten from UI: " +
-                        getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) +
-                        "/" +
-                        getString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT)
+                TAG,
+                "Instrument just overwritten from UI: " + getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" + getString(
+                    MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT
+                )
             )
         }
         putConfigDataItem(applicationContext, configKeysToOverwrite)
@@ -167,8 +164,7 @@ class MusicWatchFaceConfigActivity : Activity() {
          * [ImageView] (representing the icon), because it does not change for each item. We
          * wanted to keep the sample simple, but you could add extra code to customize each icon.
          */
-        private inner class ViewHolder(view: View) :
-            RecyclerView.ViewHolder(view) {
+        private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
             private val mInstrumentPreview: ImageView
             private lateinit var mInstrumentId: String
 
@@ -239,8 +235,7 @@ class MusicWatchFaceConfigActivity : Activity() {
         private const val REDUCED_INSTRUMENT_RATIO = 0.5f
         private fun initAllInstrumentIds(res: Resources) {
             if (!this::mAllInstrumentIds.isInitialized) {
-                mAllInstrumentIds =
-                    listOf(*res.getStringArray(R.array.all_instruments_array))
+                mAllInstrumentIds = listOf(*res.getStringArray(R.array.all_instruments_array))
                 Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size)
             }
         }
@@ -267,8 +262,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             val paint = Paint()
             with(paint) {
                 strokeWidth = 4f
-                color =
-                    ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null)
+                color = ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
             }
@@ -283,8 +277,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             // for vertical instruments, <1
             val svgWHAspectRatio = svg.documentAspectRatio
             val svgSize = PointF(
-                svg.documentViewBox.width(),
-                svg.documentViewBox.height()
+                svg.documentViewBox.width(), svg.documentViewBox.height()
             )
 
             /*Log.i(TAG, "Hand: " + instrument +
@@ -296,8 +289,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             val scaledH = bmpSize.x * svgWHAspectRatio
             //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
             val bmp = Bitmap.createBitmap(
-                bmpSize.x.toInt(), bmpSize.y.toInt(),
-                Bitmap.Config.ARGB_8888
+                bmpSize.x.toInt(), bmpSize.y.toInt(), Bitmap.Config.ARGB_8888
             )
             val scale = scaledH / svgSize.x * REDUCED_INSTRUMENT_RATIO
             //Log.i(TAG, "scale, converting svg to bmp: " + scale);
@@ -321,8 +313,7 @@ class MusicWatchFaceConfigActivity : Activity() {
                 save()
                 // This is to make sure scaled and unscaled centres are the same
                 translate(
-                    (bmpSize.x - svgSize.y * scale) / 2f,
-                    (bmpSize.y - svgSize.x * scale) / 2f
+                    (bmpSize.x - svgSize.y * scale) / 2f, (bmpSize.y - svgSize.x * scale) / 2f
                 )
                 scale(scale, scale)
 
