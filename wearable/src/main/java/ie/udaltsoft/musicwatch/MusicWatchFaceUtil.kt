@@ -49,7 +49,7 @@ object MusicWatchFaceUtil {
     @JvmStatic
     fun fetchConfigDataMap(
         context: Context,
-        callback: FetchConfigDataMapCallback
+        callback: FetchConfigDataMapCallback,
     ) {
         Log.d(TAG, "fetchConfigDataMap: $context")
         val dataClient = Wearable.getDataClient(context)
@@ -97,7 +97,7 @@ object MusicWatchFaceUtil {
         val dataClient = Wearable.getDataClient(context)
         val putDataMapRequest = PutDataMapRequest.create(PATH_WITH_FEATURE)
         val configToPut = putDataMapRequest.dataMap
-        with (configToPut) {
+        with(configToPut) {
             putAll(newConfig)
             Log.i(
                 TAG, "Instruments to be put as data item: " +

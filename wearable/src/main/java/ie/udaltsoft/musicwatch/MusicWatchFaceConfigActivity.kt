@@ -91,7 +91,7 @@ class MusicWatchFaceConfigActivity : Activity() {
 
     private fun scrollToSelected(
         instrument: String,
-        view: WearableRecyclerView
+        view: WearableRecyclerView,
     ) {
         Log.d(TAG, "Scrolling to instrument /$instrument/")
         var idx = 0
@@ -108,7 +108,7 @@ class MusicWatchFaceConfigActivity : Activity() {
     private fun preparePicker(): WearableRecyclerView {
         val listView = findViewById<WearableRecyclerView>(R.id.instrument_picker)
         val ctx = listView.context
-        with (listView) {
+        with(listView) {
             layoutManager = WearableLinearLayoutManager(ctx)
             isEdgeItemsCenteringEnabled = true
 
@@ -119,7 +119,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             adapter = InstrumentAdapter(mAllInstrumentIds)
             requestFocus()
             setOnGenericMotionListener(OnGenericMotionListener { v, ev ->
-                with (ev) {
+                with(ev) {
                     if (action == MotionEvent.ACTION_SCROLL &&
                         isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)
                     ) {
@@ -141,7 +141,7 @@ class MusicWatchFaceConfigActivity : Activity() {
         databaseList()
         mSelectedInstruments[key] = value
         val configKeysToOverwrite = DataMap()
-        with (configKeysToOverwrite) {
+        with(configKeysToOverwrite) {
             putString(
                 MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
                 mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT]!!
@@ -183,7 +183,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             fun setInstrumentId(instrumentId: String) {
                 mInstrumentId = instrumentId
                 val bmp = mBitmaps[instrumentId]
-                with (mInstrumentPreview) {
+                with(mInstrumentPreview) {
                     if (bmp != null) {
                         setImageBitmap(bmp)
                     } else {
@@ -265,7 +265,7 @@ class MusicWatchFaceConfigActivity : Activity() {
 
         private fun createBorderPaint(res: Resources): Paint {
             val paint = Paint()
-            with (paint) {
+            with(paint) {
                 strokeWidth = 4f
                 color =
                     ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null)
@@ -303,7 +303,7 @@ class MusicWatchFaceConfigActivity : Activity() {
             //Log.i(TAG, "scale, converting svg to bmp: " + scale);
             val canvas = Canvas(bmp)
 
-            with (canvas) {
+            with(canvas) {
                 /*Paint pb = new Paint();
                 pb.setStrokeWidth(10);
                 pb.setColor(Color.BLUE);
