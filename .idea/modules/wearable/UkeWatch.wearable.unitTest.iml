@@ -6,8 +6,15 @@
         <additionalVisibleModuleNames>:wearable:main</additionalVisibleModuleNames>
         <compilerSettings />
         <compilerArguments>
+          <flagArguments>
+            <flagArg name="allowNoSourceFiles" arg="true" />
+            <flagArg name="noReflect" arg="true" />
+            <flagArg name="noStdlib" arg="true" />
+          </flagArguments>
           <stringArguments>
+            <stringArg name="destination" arg="$MODULE_DIR$/../../../wearable/build/tmp/kotlin-classes/releaseUnitTest" />
             <stringArg name="jvmTarget" arg="11" />
+            <stringArg name="moduleName" arg="wearable_releaseUnitTest" />
             <stringArg name="apiVersion" arg="2.0" />
             <stringArg name="languageVersion" arg="2.0" />
           </stringArguments>

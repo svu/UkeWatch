@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Sergey Udaltsov
+ * Copyright (C) 2024 Sergey Udaltsov
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted

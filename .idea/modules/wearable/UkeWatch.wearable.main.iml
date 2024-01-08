@@ -16,8 +16,15 @@
       <configuration version="5" platform="JVM 11" allPlatforms="JVM [11]" useProjectSettings="false">
         <compilerSettings />
         <compilerArguments>
+          <flagArguments>
+            <flagArg name="allowNoSourceFiles" arg="true" />
+            <flagArg name="noReflect" arg="true" />
+            <flagArg name="noStdlib" arg="true" />
+          </flagArguments>
           <stringArguments>
+            <stringArg name="destination" arg="$MODULE_DIR$/../../../wearable/build/tmp/kotlin-classes/release" />
             <stringArg name="jvmTarget" arg="11" />
+            <stringArg name="moduleName" arg="wearable_release" />
             <stringArg name="apiVersion" arg="2.0" />
             <stringArg name="languageVersion" arg="2.0" />
           </stringArguments>
