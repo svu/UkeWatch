@@ -78,7 +78,7 @@ class MusicWatchFace : CanvasWatchFaceService() {
         return Engine()
     }
 
-    inner class Engine constructor() : CanvasWatchFaceService.Engine(),
+    inner class Engine : CanvasWatchFaceService.Engine(),
         OnDataChangedListener {
 
         /**
@@ -192,25 +192,29 @@ class MusicWatchFace : CanvasWatchFaceService() {
             mBackgroundPaint.color =
                 ResourcesCompat.getColor(resources, R.color.analog_background, null)
 
-            mHandPaint.color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
-            mHandPaint.strokeWidth = resources.getDimension(R.dimen.analog_hand_stroke)
-            mHandPaint.isAntiAlias = true
-            mHandPaint.strokeCap = Paint.Cap.ROUND
-            mHandPaint.textSize = 24f
+            with(mHandPaint) {
+                color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
+                strokeWidth = resources.getDimension(R.dimen.analog_hand_stroke)
+                isAntiAlias = true
+                strokeCap = Paint.Cap.ROUND
+                textSize = 24f
+            }
 
-            mStaffPaint.color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
-            mStaffPaint.strokeWidth = resources.getDimension(R.dimen.staff_stroke)
-            mStaffPaint.isAntiAlias = true
-            mStaffPaint.strokeCap = Paint.Cap.ROUND
+            with(mStaffPaint) {
+                color = ResourcesCompat.getColor(resources, R.color.analog_hands, null)
+                strokeWidth = resources.getDimension(R.dimen.staff_stroke)
+                isAntiAlias = true
+                strokeCap = Paint.Cap.ROUND
+            }
 
-            mTime = GregorianCalendar()
             try {
                 createHands()
                 createStaticSvgs()
             } catch (ex: SVGParseException) {
                 ex.printStackTrace()
             }
-            mDateFormat = SimpleDateFormat(resources.getString(R.string.date_format), Locale.getDefault())
+            mDateFormat =
+                SimpleDateFormat(resources.getString(R.string.date_format), Locale.getDefault())
             Log.d(TAG, "=== Loading all config bitmaps ===")
             buildAllBitmaps(getResources(), applicationContext)
             Log.d(TAG, "=== Done loading all config bitmaps ===")
@@ -229,13 +233,13 @@ class MusicWatchFace : CanvasWatchFaceService() {
 
         @Throws(SVGParseException::class)
         private fun createStaticSvgs() {
-            threeOCSvg = SVG.getFromResource(getResources(), R.raw.three_oc)
-            sixOCSvg = SVG.getFromResource(getResources(), R.raw.six_oc)
-            nineOCSvg = SVG.getFromResource(getResources(), R.raw.nine_oc)
-            twelveOCSvg = SVG.getFromResource(getResources(), R.raw.twelve_oc)
-            hourSvg = SVG.getFromResource(getResources(), R.raw.hour)
-            noteSvg = SVG.getFromResource(getResources(), R.raw.note)
-            noteAcSvg = SVG.getFromResource(getResources(), R.raw.note_ac)
+            threeOCSvg = SVG.getFromResource(resources, R.raw.three_oc)
+            sixOCSvg = SVG.getFromResource(resources, R.raw.six_oc)
+            nineOCSvg = SVG.getFromResource(resources, R.raw.nine_oc)
+            twelveOCSvg = SVG.getFromResource(resources, R.raw.twelve_oc)
+            hourSvg = SVG.getFromResource(resources, R.raw.hour)
+            noteSvg = SVG.getFromResource(resources, R.raw.note)
+            noteAcSvg = SVG.getFromResource(resources, R.raw.note_ac)
         }
 
         @Throws(SVGParseException::class)
@@ -324,45 +328,29 @@ class MusicWatchFace : CanvasWatchFaceService() {
             mTime.time = now
             if (mAmbient) {
                 if (ambientBaseBitmap == null) {
-                    Log.d(TAG, "Creating ambient base bitmap")
-                    val abb =
-                        Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
-                    ambientBaseBitmap = abb
-                    val abc = Canvas(abb)
-                    abc.drawRect(
-                        0f,
-                        0f,
-                        canvas.width.toFloat(),
-                        canvas.height.toFloat(),
+                    val (bitmap, canvas) = createBaseBitmap(
+                        "ambient",
+                        canvas,
                         mBackgroundPaintAmbient
                     )
+                    ambientBaseBitmap = bitmap
                 }
                 canvas.drawBitmap(ambientBaseBitmap!!, 0f, 0f, null)
             } else {
                 if (normalBaseBitmap == null) {
-                    Log.d(TAG, "Creating normal base bitmap")
-                    val nbb =
-                        Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
-                    normalBaseBitmap = nbb
-                    val nbc = Canvas(nbb)
-                    nbc.drawRect(
-                        0f,
-                        0f,
-                        canvas.width.toFloat(),
-                        canvas.height.toFloat(),
-                        mBackgroundPaint
-                    )
-                    draw12369(nbc)
+                    val (bitmap, canvas) = createBaseBitmap("normal", canvas, mBackgroundPaint)
+                    normalBaseBitmap = bitmap
+                    draw12369(canvas)
                     val markHourLocations = calcMarkHourLocations(majorBitmap[4]!!)
                     for (markHourLocation in markHourLocations) {
-                        nbc.drawBitmap(
+                        canvas.drawBitmap(
                             majorBitmap[4]!!,
                             markHourLocation.x,
                             markHourLocation.y,
                             null
                         )
                     }
-                    displayBatteryStaff(nbc)
+                    displayBatteryStaff(canvas)
                 }
                 canvas.drawBitmap(normalBaseBitmap!!, 0f, 0f, null)
                 displayDate(canvas, now)
@@ -428,12 +416,31 @@ class MusicWatchFace : CanvasWatchFaceService() {
             }
         }
 
+        private fun createBaseBitmap(
+            type: String,
+            canvas: Canvas,
+            paint: Paint,
+        ): Pair<Bitmap, Canvas> {
+            Log.d(TAG, "Creating $type base bitmap")
+            val bitmap =
+                Bitmap.createBitmap(canvas.width, canvas.height, Bitmap.Config.ARGB_8888)
+            val canvas = Canvas(bitmap)
+            canvas.drawRect(
+                0f,
+                0f,
+                canvas.width.toFloat(),
+                canvas.height.toFloat(),
+                paint
+            )
+            return Pair(bitmap, canvas)
+        }
+
         private fun renderHand(
             canvas: Canvas,
             angle: Float,
             rect: RectF,
             rotationPoint: PointF,
-            svg: SVG?
+            svg: SVG?,
         ) {
             if (svg == null) return
             val p = PointF(
@@ -487,7 +494,7 @@ class MusicWatchFace : CanvasWatchFaceService() {
             val ynote = ymax - ystep * (watchBatteryNoteLevel / 2f)
             canvas.drawBitmap(
                 noteBmp!!,
-                xmin + (xmax - xmin) * 0.5f - noteBmp!!.width / 2.0f,
+                xmin + (xmax - xmin) * 0.5f - noteBmp.width / 2.0f,
                 ynote, mStaffPaint
             )
         }
