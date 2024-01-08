@@ -127,16 +127,16 @@ class MusicWatchFace : CanvasWatchFaceService() {
         private var minuteHandSvg: SVG? = null
         private var ambientHourHandSvg: SVG? = null
         private var ambientMinuteHandSvg: SVG? = null
-        private var hourRotationPoint: PointF? = null
-        private var minuteRotationPoint: PointF? = null
+        private var hourRotationPoint = PointF()
+        private var minuteRotationPoint = PointF()
 
         private var markBounds = PointF()
         private var mark12Bounds = PointF()
         private var markHourBounds = PointF()
         private var markNoteBounds = PointF()
 
-        private var hourHandRect: RectF? = null
-        private var minuteHandRect: RectF? = null
+        private var hourHandRect = RectF()
+        private var minuteHandRect = RectF()
         private var mDateFormat: DateFormat = SimpleDateFormat("EEE, MMM d", Locale.getDefault())
 
         private lateinit var threeOCSvg: SVG
@@ -386,10 +386,9 @@ class MusicWatchFace : CanvasWatchFaceService() {
                 canvas.save()
                 renderHand(
                     canvas,
-                    (
-                            mTime[GregorianCalendar.MINUTE] * 6).toFloat(),
-                    minuteHandRect!!,
-                    minuteRotationPoint!!,
+                    (mTime[GregorianCalendar.MINUTE] * 6).toFloat(),
+                    minuteHandRect,
+                    minuteRotationPoint,
                     minuteHandSvg
                 )
                 canvas.restore()
@@ -399,8 +398,8 @@ class MusicWatchFace : CanvasWatchFaceService() {
                 renderHand(
                     canvas,
                     (mTime[GregorianCalendar.HOUR] + mTime[GregorianCalendar.MINUTE] / 60f) * 30,
-                    hourHandRect!!,
-                    hourRotationPoint!!,
+                    hourHandRect,
+                    hourRotationPoint,
                     hourHandSvg
                 )
                 canvas.restore()
@@ -409,10 +408,9 @@ class MusicWatchFace : CanvasWatchFaceService() {
                 canvas.save()
                 renderHand(
                     canvas,
-                    (
-                            mTime[GregorianCalendar.MINUTE] * 6).toFloat(),
-                    minuteHandRect!!,
-                    minuteRotationPoint!!,
+                    (mTime[GregorianCalendar.MINUTE] * 6).toFloat(),
+                    minuteHandRect,
+                    minuteRotationPoint,
                     ambientMinuteHandSvg
                 )
                 canvas.restore()
@@ -422,8 +420,8 @@ class MusicWatchFace : CanvasWatchFaceService() {
                 renderHand(
                     canvas,
                     (mTime[GregorianCalendar.HOUR] + mTime[GregorianCalendar.MINUTE] / 60f) * 30,
-                    hourHandRect!!,
-                    hourRotationPoint!!,
+                    hourHandRect,
+                    hourRotationPoint,
                     ambientHourHandSvg
                 )
                 canvas.restore()
