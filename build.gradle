@@ -18,6 +18,10 @@ buildscript {
     }
 }
 
+ext {
+    defaultVersionCode = 33
+}
+
 allprojects {
     repositories {
         mavenCentral()
