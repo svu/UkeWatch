@@ -7,7 +7,7 @@ android {
         minSdk 33
         //noinspection OldTargetApi
         targetSdkVersion 33
-        versionCode defaultVersionCode
+        versionCode 23
         versionName '2.3'
     }
     buildTypes {
