@@ -327,7 +327,7 @@ class MusicWatchFace : CanvasWatchFaceService() {
             mTime.time = now
             if (mAmbient) {
                 if (ambientBaseBitmap == null) {
-                    val (bitmap, canvas) = createBaseBitmap(
+                    val (bitmap, _) = createBaseBitmap(
                         "ambient", canvas, mBackgroundPaintAmbient
                     )
                     ambientBaseBitmap = bitmap

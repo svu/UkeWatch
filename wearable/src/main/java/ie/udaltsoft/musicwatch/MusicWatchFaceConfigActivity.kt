@@ -183,7 +183,7 @@ class MusicWatchFaceConfigActivity : Activity() {
                     if (bmp != null) {
                         setImageBitmap(bmp)
                     } else {
-                        Log.e(Companion.TAG, "Could not find bitmap for $instrumentId")
+                        Log.e(TAG, "Could not find bitmap for $instrumentId")
                     }
                     cropToPadding = false
                     adjustViewBounds = true
@@ -204,7 +204,7 @@ class MusicWatchFaceConfigActivity : Activity() {
 
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
             val instr = mInstrumentsList[position]
-            Log.d(Companion.TAG, "Element $position set: $instr")
+            Log.d(TAG, "Element $position set: $instr")
             viewHolder.setOnClickListener {
                 updateConfigDataItem(mCurrentConfigKey, instr)
                 if (mCurrentConfigKey == MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) {
