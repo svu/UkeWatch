@@ -47,7 +47,6 @@
     <content url="file://$MODULE_DIR$/../../../wearable/src/androidTestDebug" />
     <orderEntry type="jdk" jdkName="Android API 34, extension level 7 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="UkeWatch.wearable.main" scope="TEST" />
     <orderEntry type="library" scope="TEST" name="Gradle: androidx.wear:wear:1.3.0@aar" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: androidx.core:core:1.13.1@aar" level="project" />
     <orderEntry type="library" scope="TEST" name="Gradle: androidx.annotation:annotation-experimental:1.4.0@aar" level="project" />
