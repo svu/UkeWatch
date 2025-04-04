@@ -165,12 +165,8 @@ class MusicWatchFaceConfigActivity : Activity() {
          * wanted to keep the sample simple, but you could add extra code to customize each icon.
          */
         private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            private val mInstrumentPreview: ImageView
+            private val mInstrumentPreview: ImageView = view.findViewById(R.id.instrument_preview)
             private lateinit var mInstrumentId: String
-
-            init {
-                mInstrumentPreview = view.findViewById(R.id.instrument_preview)
-            }
 
             override fun toString(): String {
                 return mInstrumentId

@@ -68,6 +68,11 @@ import java.util.GregorianCalendar
 import java.util.Locale
 import java.util.TimeZone
 import java.util.concurrent.TimeUnit
+import kotlin.math.cos
+import kotlin.math.floor
+import kotlin.math.min
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /**
  * Analog watch face with a ticking second hand. In ambient mode, the second hand isn't shown. On
@@ -354,8 +359,8 @@ class MusicWatchFace : CanvasWatchFaceService() {
 
                 // second hand
                 val secRot = mTime[GregorianCalendar.SECOND] / 30f * Math.PI.toFloat()
-                val secX = Math.sin(secRot.toDouble()).toFloat() * secLength
-                val secY = -Math.cos(secRot.toDouble()).toFloat() * secLength
+                val secX = sin(secRot.toDouble()).toFloat() * secLength
+                val secY = -cos(secRot.toDouble()).toFloat() * secLength
                 canvas.drawLine(
                     center.x, center.y, center.x + secX, center.y + secY, mHandPaint
                 )
@@ -470,7 +475,7 @@ class MusicWatchFace : CanvasWatchFaceService() {
             val xmax = center.x * (1 + STAFF_X_RATIO_END)
             val ymax = center.y * STAFF_Y_RATIO_END
             val ystep = center.y * (STAFF_Y_RATIO_END - STAFF_Y_RATIO_START) / 4
-            val watchBatteryNoteLevel = Math.floor((batteryPct * 10).toDouble()).toInt()
+            val watchBatteryNoteLevel = floor((batteryPct * 10).toDouble()).toInt()
             val ynote = ymax - ystep * (watchBatteryNoteLevel / 2f)
             canvas.drawBitmap(
                 noteBmp!!, xmin + (xmax - xmin) * 0.5f - noteBmp.width / 2.0f, ynote, mStaffPaint
@@ -566,8 +571,8 @@ class MusicWatchFace : CanvasWatchFaceService() {
             val halfSize = PointF(bitmap.width / 2f, bitmap.height / 2f)
             for (i in HOUR_ANGLES.indices) {
                 markHourLocations[i].offset(
-                    center.x * (1 + Math.sin(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.x,
-                    center.y * (1 - Math.cos(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.y
+                    center.x * (1 + sin(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.x,
+                    center.y * (1 - cos(HOUR_ANGLES[i]) * offset).toFloat() - halfSize.y
                 )
             }
             return markHourLocations
@@ -575,12 +580,12 @@ class MusicWatchFace : CanvasWatchFaceService() {
 
         private fun createBitmapFromSvg(svg: SVG, bounds: PointF, idx: Int, isForcedY: Boolean) {
             with(svg) {
-                scales[idx] = if (isForcedY) bounds.y / documentHeight else Math.min(
+                scales[idx] = if (isForcedY) bounds.y / documentHeight else min(
                     bounds.x / documentWidth, bounds.y / documentHeight
                 )
                 majorBitmap[idx] = Bitmap.createBitmap(
-                    Math.round(documentWidth * scales[idx]),
-                    Math.round(documentHeight * scales[idx]),
+                    (documentWidth * scales[idx]).roundToInt(),
+                    (documentHeight * scales[idx]).roundToInt(),
                     Bitmap.Config.ARGB_8888
                 )
                 val canvas = Canvas(majorBitmap[idx]!!)
