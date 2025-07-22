@@ -4,9 +4,9 @@ apply plugin: 'org.jetbrains.kotlin.android'
 android {
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdk 33
+        minSdk 35
+        targetSdk 35
         //noinspection OldTargetApi
-        targetSdkVersion 33
         versionCode 23
         versionName '2.3'
     }
@@ -28,17 +28,17 @@ android {
         jvmToolchain(11)
     }
     namespace 'ie.udaltsoft.musicwatch'
-    compileSdk 34
+    compileSdk 35
 }
 
 dependencies {
     api fileTree(include: ['*.jar'], dir: 'libs')
     //noinspection GradleDependency,GradleCompatible
     implementation 'androidx.wear:wear:1.3.0'
-    implementation 'com.google.android.gms:play-services-wearable:18.2.0'
+    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
     //noinspection GradleCompatible
     implementation 'androidx.legacy:legacy-support-v13:1.0.0'
-    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation 'androidx.core:core-ktx:1.16.0'
     compileOnly 'com.google.android.wearable:wearable:2.9.0'
     implementation 'com.google.android.support:wearable:2.9.0'
     implementation 'com.caverock:androidsvg-aar:1.4'
