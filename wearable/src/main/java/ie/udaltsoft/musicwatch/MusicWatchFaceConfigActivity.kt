@@ -165,8 +165,12 @@ class MusicWatchFaceConfigActivity : Activity() {
          * wanted to keep the sample simple, but you could add extra code to customize each icon.
          */
         private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            private val mInstrumentPreview: ImageView = view.findViewById(R.id.instrument_preview)
+            private val mInstrumentPreview: ImageView
             private lateinit var mInstrumentId: String
+
+            init {
+                mInstrumentPreview = view.findViewById(R.id.instrument_preview)
+            }
 
             override fun toString(): String {
                 return mInstrumentId
@@ -179,7 +183,7 @@ class MusicWatchFaceConfigActivity : Activity() {
                     if (bmp != null) {
                         setImageBitmap(bmp)
                     } else {
-                        Log.e(TAG, "Could not find bitmap for $instrumentId")
+                        Log.e(Companion.TAG, "Could not find bitmap for $instrumentId")
                     }
                     cropToPadding = false
                     adjustViewBounds = true
@@ -200,7 +204,7 @@ class MusicWatchFaceConfigActivity : Activity() {
 
         override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
             val instr = mInstrumentsList[position]
-            Log.d(TAG, "Element $position set: $instr")
+            Log.d(Companion.TAG, "Element $position set: $instr")
             viewHolder.setOnClickListener {
                 updateConfigDataItem(mCurrentConfigKey, instr)
                 if (mCurrentConfigKey == MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) {
