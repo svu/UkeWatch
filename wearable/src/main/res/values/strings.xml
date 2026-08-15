@@ -30,4 +30,7 @@
         <item>@string/instrument_celtic_harp</item>
     </string-array>
 
+    <string name="style_label_guitar">Guitar</string>
+    <string name="style_label_bass">Bass</string>
+    <string name="style_label_ukulele">Ukulele</string>
 </resources>

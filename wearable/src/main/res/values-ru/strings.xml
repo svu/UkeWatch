@@ -4,4 +4,8 @@
     <string name="hours">Часы</string>
     <string name="minutes">Минуты</string>
     <string name="visible_watch_name">Муз. Инструменты</string>
+
+    <string name="style_label_guitar">Гитара</string>
+    <string name="style_label_bass">Бас</string>
+    <string name="style_label_ukulele">Укулеле</string>
 </resources>
