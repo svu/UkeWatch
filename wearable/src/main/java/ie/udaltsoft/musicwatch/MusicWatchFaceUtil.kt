@@ -37,6 +37,11 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 
+import androidx.wear.watchface.style.UserStyleSchema
+import androidx.wear.watchface.style.UserStyleSetting
+import androidx.wear.watchface.style.UserStyleSetting.ListUserStyleSetting
+import androidx.wear.watchface.style.WatchFaceLayer
+
 object MusicWatchFaceUtil {
     private const val TAG = "MusicWatchFaceUtil"
     const val KEY_HOUR_INSTRUMENT = "HOUR_INSTRUMENT"
@@ -44,6 +49,45 @@ object MusicWatchFaceUtil {
     const val PATH_WITH_FEATURE = "/music_face_config"
     const val HOUR_INSTRUMENT_DEFAULT = "wood_uke"
     const val MINUTE_INSTRUMENT_DEFAULT = "pink_uke"
+
+    const val ID_HOUR_INSTRUMENT = "hour_instrument"
+    const val ID_MINUTE_INSTRUMENT = "minute_instrument"
+
+    @JvmStatic
+    fun createUserStyleSchema(context: Context): UserStyleSchema {
+        val res = context.resources
+        val instruments = res.getStringArray(R.array.all_instruments_array)
+        val options = instruments.map { instrumentId ->
+            ListUserStyleSetting.ListOption(
+                UserStyleSetting.Option.Id(instrumentId),
+                res,
+                res.getIdentifier("instrument_$instrumentId", "string", context.packageName),
+                null
+            )
+        }
+
+        val hourInstrumentSetting = ListUserStyleSetting(
+            UserStyleSetting.Id(ID_HOUR_INSTRUMENT),
+            res,
+            R.string.hours,
+            R.string.hours,
+            null,
+            options,
+            listOf(WatchFaceLayer.BASE)
+        )
+
+        val minuteInstrumentSetting = ListUserStyleSetting(
+            UserStyleSetting.Id(ID_MINUTE_INSTRUMENT),
+            res,
+            R.string.minutes,
+            R.string.minutes,
+            null,
+            options,
+            listOf(WatchFaceLayer.BASE)
+        )
+
+        return UserStyleSchema(listOf(hourInstrumentSetting, minuteInstrumentSetting))
+    }
 
     @JvmStatic
     fun fetchConfigDataMap(

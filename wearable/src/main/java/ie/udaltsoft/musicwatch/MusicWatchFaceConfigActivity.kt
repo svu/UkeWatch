@@ -1,31 +1,9 @@
 /*
- * Copyright (C) 2024 Sergey Udaltsov
+ * Copyright (C) 2024-2026 Sergey Udaltsov
  * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted
- * provided that the following conditions are met:
- *
- * 1. Redistributions of source code must retain the above copyright notice, this list of conditions
- *    and the following disclaimer.
- *
- * 2. Redistributions in binary form must reproduce the above copyright notice, this list of
- *    conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- *
- * 3. Neither the name of the copyright holder nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- * FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR
- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY
- * WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package ie.udaltsoft.musicwatch
 
-import android.app.Activity
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -35,307 +13,214 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.MotionEvent
-import android.view.View
-import android.view.View.OnGenericMotionListener
-import android.view.ViewConfiguration
-import android.view.ViewGroup
-import android.widget.ImageView
-import android.widget.TextView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.view.InputDeviceCompat
-import androidx.core.view.MotionEventCompat
-import androidx.core.view.ViewConfigurationCompat
-import androidx.recyclerview.widget.RecyclerView
-import androidx.wear.widget.WearableLinearLayoutManager
-import androidx.wear.widget.WearableRecyclerView
+import androidx.wear.compose.foundation.lazy.TransformingLazyColumn
+import androidx.wear.compose.foundation.lazy.rememberTransformingLazyColumnState
+import androidx.wear.compose.material3.AppScaffold
+import androidx.wear.compose.material3.Button
+import androidx.wear.compose.material3.ButtonDefaults
+import androidx.wear.compose.material3.ListHeader
+import androidx.wear.compose.material3.ListHeaderDefaults
+import androidx.wear.compose.material3.MaterialTheme
+import androidx.wear.compose.material3.ScreenScaffold
+import androidx.wear.compose.material3.SurfaceTransformation
+import androidx.wear.compose.material3.Text
+import androidx.wear.compose.material3.lazy.rememberTransformationSpec
+import androidx.wear.compose.material3.lazy.transformedHeight
+import androidx.wear.watchface.editor.EditorSession
+import androidx.wear.watchface.style.UserStyleSetting
 import com.caverock.androidsvg.SVG
 import com.caverock.androidsvg.SVGParseException
-import com.google.android.gms.wearable.DataMap
-import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.FetchConfigDataMapCallback
 import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.fetchConfigDataMap
 import ie.udaltsoft.musicwatch.MusicWatchFaceUtil.putConfigDataItem
-import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
-/**
- * Wearable config
- */
-class MusicWatchFaceConfigActivity : Activity() {
-    private lateinit var mHeader: TextView
-    private lateinit var mListView: WearableRecyclerView
-    private val mSelectedInstruments = HashMap<String, String>()
-    private lateinit var mCurrentConfigKey: String
+import androidx.lifecycle.lifecycleScope
+
+class MusicWatchFaceConfigActivity : ComponentActivity() {
+
+    private lateinit var editorSession: EditorSession
+    private val bitmaps = mutableStateOf<Map<String, Bitmap>>(emptyMap())
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.music_watch_config)
-        mHeader = findViewById(R.id.header)
-        mListView = preparePicker()
-        mCurrentConfigKey = MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT
-        fetchConfigDataMap(applicationContext, FetchConfigDataMapCallback { config: DataMap ->
-            val hi = config.getString(
-                MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
-            )
-            val mi = config.getString(
-                MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                MusicWatchFaceUtil.HOUR_INSTRUMENT_DEFAULT
-            )
-            Log.i(TAG, "Initial set of instruments: $hi/$mi")
-            mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT] = hi
-            mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT] = mi
-            scrollToSelected(hi, mListView)
-        })
-    }
 
-    private fun scrollToSelected(
-        instrument: String,
-        view: WearableRecyclerView,
-    ) {
-        Log.d(TAG, "Scrolling to instrument /$instrument/")
-        var idx = 0
-        for (i in mAllInstrumentIds) {
-            if (i == instrument) {
-                Log.d(TAG, "Scrolling to position /$idx/")
-                view.scrollToPosition(idx)
-                break
+        setContent {
+            MusicWatchTheme {
+                ConfigScreen()
             }
-            idx++
+        }
+
+        lifecycleScope.launch {
+            editorSession = EditorSession.createOnWatchEditorSession(this@MusicWatchFaceConfigActivity)
+            loadBitmaps()
         }
     }
 
-    private fun preparePicker(): WearableRecyclerView {
-        val listView = findViewById<WearableRecyclerView>(R.id.instrument_picker)
-        val ctx = listView.context
-        with(listView) {
-            layoutManager = WearableLinearLayoutManager(ctx)
-            isEdgeItemsCenteringEnabled = true
+    private fun loadBitmaps() {
+        val res = resources
+        val allInstruments = res.getStringArray(R.array.all_instruments_array)
+        val borderPaint = createBorderPaint(res)
+        val map = mutableMapOf<String, Bitmap>()
+        
+        for (instrumentId in allInstruments) {
+            try {
+                map[instrumentId] = buildBitmap(res, applicationContext, instrumentId, borderPaint)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error building bitmap for $instrumentId", e)
+            }
+        }
+        bitmaps.value = map
+    }
 
-            // Improves performance because we know changes in content do not change the layout size of
-            // the RecyclerView.
-            setHasFixedSize(true)
-            initAllInstrumentIds(resources)
-            adapter = InstrumentAdapter(mAllInstrumentIds)
-            requestFocus()
-            setOnGenericMotionListener(OnGenericMotionListener { v, ev ->
-                with(ev) {
-                    if (action == MotionEvent.ACTION_SCROLL && isFromSource(InputDeviceCompat.SOURCE_ROTARY_ENCODER)) {
-                        val delta =
-                            -getAxisValue(MotionEventCompat.AXIS_SCROLL) * ViewConfigurationCompat.getScaledVerticalScrollFactor(
-                                ViewConfiguration.get(ctx), ctx
+    @Composable
+    private fun ConfigScreen() {
+        var currentKey by remember { mutableStateOf(MusicWatchFaceUtil.ID_HOUR_INSTRUMENT) }
+        val columnState = rememberTransformingLazyColumnState()
+        val transformationSpec = rememberTransformationSpec()
+        val scope = rememberCoroutineScope()
+
+        AppScaffold {
+            ScreenScaffold(scrollState = columnState) { contentPadding ->
+                TransformingLazyColumn(
+                    state = columnState,
+                    contentPadding = contentPadding,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    item {
+                        ListHeader(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(ListHeaderDefaults.minimumTopListContentPadding),
+                            transformation = SurfaceTransformation(transformationSpec)
+                        ) {
+                            Text(
+                                text = if (currentKey == MusicWatchFaceUtil.ID_HOUR_INSTRUMENT) 
+                                    stringResource(R.string.hours) else stringResource(R.string.minutes),
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
                             )
-                        v.scrollBy(0, delta.roundToInt())
-                        return@OnGenericMotionListener true
+                        }
+                    }
+
+                    val allInstruments = resources.getStringArray(R.array.all_instruments_array)
+                    items(allInstruments.size) { index ->
+                        val instrumentId = allInstruments[index]
+                        val bitmap = bitmaps.value[instrumentId]
+
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    updateStyle(currentKey, instrumentId)
+                                    if (currentKey == MusicWatchFaceUtil.ID_HOUR_INSTRUMENT) {
+                                        currentKey = MusicWatchFaceUtil.ID_MINUTE_INSTRUMENT
+                                        columnState.scrollToItem(0)
+                                    } else {
+                                        finish()
+                                    }
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .transformedHeight(this, transformationSpec)
+                                .minimumVerticalContentPadding(ButtonDefaults.minimumVerticalListContentPadding),
+                            transformation = SurfaceTransformation(transformationSpec)
+                        ) {
+                            if (bitmap != null) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = instrumentId,
+                                    modifier = Modifier.fillMaxSize().padding(4.dp)
+                                )
+                            }
+                        }
                     }
                 }
-                false
-            })
+            }
         }
-        return listView
     }
 
-    private fun updateConfigDataItem(key: String, value: String) {
-        databaseList()
-        mSelectedInstruments[key] = value
-        val configKeysToOverwrite = DataMap()
-        with(configKeysToOverwrite) {
-            putString(
-                MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT,
-                mSelectedInstruments[MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT]!!
-            )
-            putString(
-                MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT,
-                mSelectedInstruments[MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT]!!
-            )
-            Log.i(
-                TAG,
-                "Instrument just overwritten from UI: " + getString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) + "/" + getString(
-                    MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT
-                )
-            )
+    private fun updateStyle(settingId: String, optionId: String) {
+        val currentStyle = editorSession.userStyle.value.toMutableUserStyle()
+        val setting = editorSession.userStyleSchema[UserStyleSetting.Id(settingId)]!!
+        currentStyle[setting] = UserStyleSetting.Option.Id(optionId)
+        editorSession.userStyle.value = currentStyle.toUserStyle()
+        
+        // Also update DataClient for phone sync
+        // Get current data map and update it
+        val config = com.google.android.gms.wearable.DataMap().apply {
+            putString(MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT, 
+                currentStyle[editorSession.userStyleSchema[UserStyleSetting.Id(MusicWatchFaceUtil.ID_HOUR_INSTRUMENT)]!!]!!.id.value.decodeToString())
+            putString(MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT, 
+                currentStyle[editorSession.userStyleSchema[UserStyleSetting.Id(MusicWatchFaceUtil.ID_MINUTE_INSTRUMENT)]!!]!!.id.value.decodeToString())
         }
-        putConfigDataItem(applicationContext, configKeysToOverwrite)
-    }
-
-    private inner class InstrumentAdapter(private val mInstrumentsList: List<String>) :
-        RecyclerView.Adapter<InstrumentAdapter.ViewHolder>() {
-        /**
-         * Provides reference to the views for each data item. We don't maintain a reference to the
-         * [ImageView] (representing the icon), because it does not change for each item. We
-         * wanted to keep the sample simple, but you could add extra code to customize each icon.
-         */
-        private inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-            private val mInstrumentPreview: ImageView
-            private lateinit var mInstrumentId: String
-
-            init {
-                mInstrumentPreview = view.findViewById(R.id.instrument_preview)
-            }
-
-            override fun toString(): String {
-                return mInstrumentId
-            }
-
-            fun setInstrumentId(instrumentId: String) {
-                mInstrumentId = instrumentId
-                val bmp = mBitmaps[instrumentId]
-                with(mInstrumentPreview) {
-                    if (bmp != null) {
-                        setImageBitmap(bmp)
-                    } else {
-                        Log.e(Companion.TAG, "Could not find bitmap for $instrumentId")
-                    }
-                    cropToPadding = false
-                    adjustViewBounds = true
-                    scaleType = ImageView.ScaleType.FIT_CENTER
-                }
-            }
-
-            fun setOnClickListener(listener: View.OnClickListener) {
-                mInstrumentPreview.setOnClickListener(listener)
-            }
-        }
-
-        override fun onCreateViewHolder(viewGroup: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(viewGroup.context)
-                .inflate(R.layout.instrument_picker_item, viewGroup, false)
-            return ViewHolder(view)
-        }
-
-        override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-            val instr = mInstrumentsList[position]
-            Log.d(Companion.TAG, "Element $position set: $instr")
-            viewHolder.setOnClickListener {
-                updateConfigDataItem(mCurrentConfigKey, instr)
-                if (mCurrentConfigKey == MusicWatchFaceUtil.KEY_HOUR_INSTRUMENT) {
-                    mHeader.setText(R.string.minutes)
-                    mCurrentConfigKey = MusicWatchFaceUtil.KEY_MINUTE_INSTRUMENT
-                    scrollToSelected(mSelectedInstruments[mCurrentConfigKey]!!, mListView)
-                } else {
-                    finish()
-                }
-            }
-
-            // Replaces content of view with correct element from data set
-            viewHolder.setInstrumentId(instr)
-        }
-
-        // Return the size of your dataset (invoked by the layout manager)
-        override fun getItemCount(): Int {
-            return mInstrumentsList.size
-        }
+        putConfigDataItem(applicationContext, config)
     }
 
     companion object {
         private const val TAG = "MusicWatchFaceConfig"
-        private lateinit var mAllInstrumentIds: List<String>
-        private lateinit var mCircleBorderPaint: Paint
-        private val mBitmaps = HashMap<String, Bitmap>()
         private const val MAX_BMP_SIZE = 150f
         private const val REDUCED_INSTRUMENT_RATIO = 0.5f
-        private fun initAllInstrumentIds(res: Resources) {
-            if (!this::mAllInstrumentIds.isInitialized) {
-                mAllInstrumentIds = listOf(*res.getStringArray(R.array.all_instruments_array))
-                Log.d(TAG, "Loaded all instrument ids, total " + mAllInstrumentIds.size)
-            }
-        }
-
-        @JvmStatic
-        fun buildAllBitmaps(res: Resources, context: Context) {
-            if (!this::mCircleBorderPaint.isInitialized) {
-                mCircleBorderPaint = createBorderPaint(res)
-            }
-            initAllInstrumentIds(res)
-            for (instrumentId in mAllInstrumentIds) {
-                try {
-                    Log.i(TAG, "The instrument bitmap was not built yet, building $instrumentId")
-                    val bmp = buildBitmap(res, context, instrumentId)
-                    mBitmaps[instrumentId] = bmp
-                } catch (ex: SVGParseException) {
-                    Log.e(TAG, "Could not build bitmap: $ex")
-                    ex.printStackTrace()
-                }
-            }
-        }
 
         private fun createBorderPaint(res: Resources): Paint {
-            val paint = Paint()
-            with(paint) {
+            return Paint().apply {
                 strokeWidth = 4f
                 color = ResourcesCompat.getColor(res, R.color.config_activity_circle_border, null)
                 isAntiAlias = true
                 style = Paint.Style.STROKE
             }
-            return paint
         }
 
-        @Throws(SVGParseException::class)
-        private fun buildBitmap(res: Resources, context: Context, instrument: String): Bitmap {
+        private fun buildBitmap(res: Resources, context: Context, instrument: String, borderPaint: Paint): Bitmap {
             val svgResourceId = res.getIdentifier(instrument + "_hand", "raw", context.packageName)
             val svg = SVG.getFromResource(res, svgResourceId)
-
-            // for vertical instruments, <1
+            val svgSize = PointF(svg.documentViewBox.width(), svg.documentViewBox.height())
             val svgWHAspectRatio = svg.documentAspectRatio
-            val svgSize = PointF(
-                svg.documentViewBox.width(), svg.documentViewBox.height()
-            )
 
-            /*Log.i(TAG, "Hand: " + instrument +
-                ", SVG w/h ratio: " + svgWHAspectRatio +
-                " or may be " + (svgSize.x / svgSize.y) +
-                ", SVG: " + svgSize.x + ":" + svgSize.y);*/
-            // for vertical instruments, bmpSize.x < bmpSize.y, they will be horizontal
             val bmpSize = PointF(MAX_BMP_SIZE, MAX_BMP_SIZE / 2f)
             val scaledH = bmpSize.x * svgWHAspectRatio
-            //Log.i(TAG, "BMP sizes: " + bmpSize.x + ":" + bmpSize.y + "/scaled height:" + scaledH);
-            val bmp = Bitmap.createBitmap(
-                bmpSize.x.toInt(), bmpSize.y.toInt(), Bitmap.Config.ARGB_8888
-            )
+            val bmp = Bitmap.createBitmap(bmpSize.x.toInt(), bmpSize.y.toInt(), Bitmap.Config.ARGB_8888)
             val scale = scaledH / svgSize.x * REDUCED_INSTRUMENT_RATIO
-            //Log.i(TAG, "scale, converting svg to bmp: " + scale);
             val canvas = Canvas(bmp)
 
             with(canvas) {
-                /*Paint pb = new Paint();
-                pb.setStrokeWidth(10);
-                pb.setColor(Color.BLUE);
-
-                Paint pg = new Paint();
-                pg.setStrokeWidth(10);
-                pg.setColor(Color.GREEN);*/
-
-                //drawRect(0, 0, bmpSize.x, bmpSize.y, pr);
-                // V from left-top -> centre -> right-top
-                drawOval(2f, 2f, bmpSize.x - 2, bmpSize.y - 2, mCircleBorderPaint)
-
-                //canvas.drawLine(0, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
-                //canvas.drawLine(bmpSize.x, 0, bmpSize.x / 2, bmpSize.y / 2, pb);
+                drawOval(2f, 2f, bmpSize.x - 2, bmpSize.y - 2, borderPaint)
                 save()
-                // This is to make sure scaled and unscaled centres are the same
-                translate(
-                    (bmpSize.x - svgSize.y * scale) / 2f, (bmpSize.y - svgSize.x * scale) / 2f
-                )
+                translate((bmpSize.x - svgSize.y * scale) / 2f, (bmpSize.y - svgSize.x * scale) / 2f)
                 scale(scale, scale)
-
-                // ^ from left-bottom -> centre -> right-bottom
-                /*drawLine(0,
-                        svgSize.x,
-                        svgSize.y / 2,
-                        svgSize.x / 2, pr);
-
-                drawLine(svgSize.y / 2,
-                        svgSize.x / 2,
-                        svgSize.y,
-                        svgSize.x, pr);*/
                 val offset = PointF(svgSize.y / 2f, svgSize.x / 2f)
-                //Log.i(TAG, "offset: " + offset.x + ":" + offset.y);
                 translate(-offset.x + offset.y, -offset.x + offset.y)
                 rotate(-90f, offset.x, offset.y)
-
                 svg.renderToCanvas(this, RectF(0f, 0f, svgSize.x, svgSize.y))
                 restore()
             }
             return bmp
+        }
+        
+        fun buildAllBitmaps(res: Resources, context: Context) {
+            // No-op for compatibility, but the activity handles it now.
         }
     }
 }

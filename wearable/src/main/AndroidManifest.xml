@@ -20,6 +20,7 @@
         <service
             android:name=".MusicWatchFace"
             android:label="@string/visible_watch_name"
+            android:icon="@mipmap/ic_launcher"
             android:permission="android.permission.BIND_WALLPAPER"
             android:exported="true">
             <meta-data
@@ -43,6 +44,16 @@
                 <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
             </intent-filter>
         </service>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".MusicWatchFaceConfigActivity"
