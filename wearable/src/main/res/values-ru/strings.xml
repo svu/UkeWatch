@@ -17,4 +17,10 @@
     <string name="inst_harp">Кельтская Арфа</string>
 
     <string name="visible_watch_name">Муз. Инструменты</string>
+
+    <string name="config_flavor_ukuleles">Укулели</string>
+    <string name="config_flavor_violin">Скрипка</string>
+    <string name="config_flavor_rock">Рок</string>
+    <string name="config_flavor_winds">Духовые</string>
+
 </resources>

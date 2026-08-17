@@ -25,6 +25,25 @@
             <ListOption id="7" displayName="@string/inst_oboe" icon="@drawable/oboe_hand" />
             <ListOption id="8" displayName="@string/inst_harp" icon="@drawable/celtic_harp_hand" />
         </ListConfiguration>
+
+        <Flavors defaultValue="ukulele">
+            <Flavor id="ukulele" displayName="@string/config_flavor_ukuleles">
+                <Configuration id="hour_idx" optionId="0"/>
+                <Configuration id="min_idx" optionId="1"/>
+            </Flavor>
+            <Flavor id="violins" displayName="@string/config_flavor_violin">
+                <Configuration id="hour_idx" optionId="2"/>
+                <Configuration id="min_idx" optionId="3"/>
+            </Flavor>
+            <Flavor id="guitars" displayName="@string/config_flavor_rock">
+                <Configuration id="hour_idx" optionId="4"/>
+                <Configuration id="min_idx" optionId="5"/>
+            </Flavor>
+            <Flavor id="guitars" displayName="@string/config_flavor_winds">
+                <Configuration id="hour_idx" optionId="6"/>
+                <Configuration id="min_idx" optionId="7"/>
+            </Flavor>
+        </Flavors>
     </UserConfigurations>
 
     <Scene>

@@ -30,6 +30,11 @@
     <string name="inst_oboe">Oboe</string>
     <string name="inst_harp">Celtic Harp</string>
 
+    <string name="config_flavor_ukuleles">Ukuleles</string>
+    <string name="config_flavor_violin">Violin</string>
+    <string name="config_flavor_rock">Rock</string>
+    <string name="config_flavor_winds">Winds</string>
+
     <string-array name="all_instruments_array">
         <item>@string/instrument_wood_uke</item>
         <item>@string/instrument_pink_uke</item>
