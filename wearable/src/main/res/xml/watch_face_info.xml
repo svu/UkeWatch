@@ -1,2 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<wallpaper />
+<WatchFaceInfo>
+    <Preview value="@drawable/preview_analog" />
+    <Editable value="true" />
+</WatchFaceInfo>

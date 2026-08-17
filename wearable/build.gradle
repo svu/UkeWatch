@@ -1,63 +1,40 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
-apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
 android {
+    namespace 'ie.udaltsoft.musicwatch'
+    compileSdk 35
+
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdk 26
-        //noinspection OldTargetApi
-        targetSdkVersion 34
-        versionCode 24
-        versionName '2.4'
+        minSdk 34 // Required for WFF v2
+        targetSdkVersion 35
+        versionCode 54
+        versionName '2.29'
     }
+
     buildTypes {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.debug
-
         }
     }
+
     buildFeatures {
-        compose true
+        viewBinding true
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
-        coreLibraryDesugaringEnabled true
     }
+
     kotlin {
         jvmToolchain(11)
     }
-    namespace 'ie.udaltsoft.musicwatch'
-    compileSdk 35
 }
 
 dependencies {
-    api fileTree(include: ['*.jar'], dir: 'libs')
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.2'
-    
-    // Wear OS Compose Material 3
-    implementation "androidx.wear.compose:compose-material3:1.6.2"
-    implementation "androidx.wear.compose:compose-foundation:1.6.2"
-    
-    // Watch Face
-    implementation "androidx.wear.watchface:watchface:1.2.1"
-    implementation "androidx.wear.watchface:watchface-complications-data-source:1.2.1"
-    implementation "androidx.wear.watchface:watchface-editor:1.2.1"
-    implementation "androidx.wear.watchface:watchface-style:1.2.1"
-
     implementation 'com.google.android.gms:play-services-wearable:19.0.0'
-    implementation 'androidx.core:core-ktx:1.15.0'
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.8.7'
-    implementation 'com.caverock:androidsvg-aar:1.4'
-    
-    // Compose
-    implementation platform('androidx.compose:compose-bom:2024.10.00')
-    implementation 'androidx.compose.ui:ui'
-    implementation 'androidx.compose.ui:ui-tooling-preview'
-    implementation 'androidx.activity:activity-compose:1.9.3'
-    
-    debugImplementation 'androidx.compose.ui:ui-tooling'
 }

@@ -18,6 +18,16 @@
     <string name="hours">Hours</string>
     <string name="minutes">Minutes</string>
 
+    <string name="inst_wood">Wood Ukulele</string>
+    <string name="inst_pink">Pink Ukulele</string>
+    <string name="inst_violin">Violin</string>
+    <string name="inst_bow">Bow</string>
+    <string name="inst_les_paul">Les Paul</string>
+    <string name="inst_gibson">Gibson Flying V</string>
+    <string name="inst_saxophone">Saxophone</string>
+    <string name="inst_oboe">Oboe</string>
+    <string name="inst_harp">Celtic Harp</string>
+
     <string-array name="all_instruments_array">
         <item>@string/instrument_wood_uke</item>
         <item>@string/instrument_pink_uke</item>

@@ -1,13 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:ignore="GoogleAppIndexingWarning">
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-feature android:name="android.hardware.type.watch" />
-
-    <!-- Required to act as a custom watch face. -->
-    <uses-permission android:name="com.google.android.permission.PROVIDE_BACKGROUND" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:icon="@mipmap/ic_launcher"
@@ -16,52 +11,26 @@
         android:fullBackupContent="@xml/music_watch_face_backup"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
+        android:hasCode="false"
         tools:ignore="DataExtractionRules">
-        <service
-            android:name=".MusicWatchFace"
-            android:label="@string/visible_watch_name"
-            android:icon="@mipmap/ic_launcher"
-            android:permission="android.permission.BIND_WALLPAPER"
-            android:exported="true">
-            <meta-data
-                android:name="android.service.wallpaper"
-                android:resource="@xml/watch_face" />
-            <meta-data
-                android:name="com.google.android.wearable.watchface.preview"
-                android:resource="@drawable/preview_analog" />
-            <meta-data
-                android:name="com.google.android.wearable.watchface.preview_circular"
-                android:resource="@drawable/preview_analog" />
-            <meta-data
-                android:name="com.google.android.wearable.watchface.wearableConfigurationAction"
-                android:value="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
-            <meta-data
-                android:name="com.google.android.wearable.standalone"
-                android:value="true" />
-            <intent-filter>
-                <action android:name="android.service.wallpaper.WallpaperService" />
 
-                <category android:name="com.google.android.wearable.watchface.category.WATCH_FACE" />
-            </intent-filter>
-        </service>
+        <!-- Watch Face Format Version 2 -->
+        <property
+            android:name="com.google.wear.watchface.format.version"
+            android:value="2" />
 
-        <activity
-            android:name=".MusicWatchFaceConfigActivity"
-            android:label="@string/music_config_name"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="androidx.wear.watchface.editor.action.WATCH_FACE_EDITOR" />
-                <category android:name="com.google.android.wearable.watchface.category.WEARABLE_CONFIGURATION" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+        <!-- Link the configuration directly to the watch face XML -->
+        <meta-data
+            android:name="androidx.wear.watchface.XmlConfig"
+            android:resource="@raw/watchface" />
+
+        <meta-data
+            android:name="com.google.android.wearable.standalone"
+            android:value="true" />
 
         <meta-data
             android:name="com.google.android.gms.version"
             android:value="@integer/google_play_services_version" />
-        <meta-data
-            android:name="com.google.android.wearable.standalone"
-            android:value="true" />
     </application>
 
 </manifest>
