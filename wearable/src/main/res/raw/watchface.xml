@@ -48,15 +48,19 @@
         <PartImage x="32" y="127" width="10" height="10"><Image resource="hour" /></PartImage> <!-- 10 -->
         <PartImage x="117" y="42" width="10" height="10"><Image resource="hour" /></PartImage> <!-- 11 -->
 
-        <!-- Battery -->
-        <PartDraw x="350" y="90" width="100" height="100">
-            <Line startX="10" startY="20" endX="60" endY="20"><Stroke color="#666666" thickness="1" /></Line>
-            <Line startX="10" startY="35" endX="60" endY="35"><Stroke color="#666666" thickness="1" /></Line>
-            <Line startX="10" startY="50" endX="60" endY="50"><Stroke color="#666666" thickness="1" /></Line>
-            <Line startX="10" startY="65" endX="60" endY="65"><Stroke color="#666666" thickness="1" /></Line>
-            <Line startX="10" startY="80" endX="60" endY="80"><Stroke color="#666666" thickness="1" /></Line>
+        <!-- Battery Staff (Shifted Left 30px, 20% Shorter) -->
+        <PartDraw x="280" y="70" width="120" height="144">
+            <Line startX="10" startY="20" endX="110" endY="20"><Stroke color="#666666" thickness="4" /></Line>
+            <Line startX="10" startY="46" endX="110" endY="46"><Stroke color="#666666" thickness="4" /></Line>
+            <Line startX="10" startY="72" endX="110" endY="72"><Stroke color="#666666" thickness="4" /></Line>
+            <Line startX="10" startY="98" endX="110" endY="98"><Stroke color="#666666" thickness="4" /></Line>
+            <Line startX="10" startY="124" endX="110" endY="124"><Stroke color="#666666" thickness="4" /></Line>
         </PartDraw>
-        <PartImage x="374" y="118" width="22" height="14"><Image resource="note" /></PartImage>
+        <!-- Note represents Battery: 100% over top line, 0% under bottom line -->
+        <PartImage x="322" y="64" width="36" height="24">
+            <Image resource="note" />
+            <Transform target="y" value="64 + (100 - [BATTERY_PERCENT]) * 1.32" />
+        </PartImage>
 
         <!-- Date (Mon AUG 17) -->
         <PartText x="0" y="330" width="480" height="60">
