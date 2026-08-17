@@ -64,7 +64,7 @@
 
         <!-- Date (Mon AUG 17) -->
         <PartText x="0" y="330" width="480" height="60">
-            <Text align="CENTER">
+            <Text>
                 <Font family="SYNC_TO_DEVICE" size="36" color="#cccccc">
                     <Template>%s %s %d
                         <Parameter expression="[DAY_OF_WEEK_S]" />
