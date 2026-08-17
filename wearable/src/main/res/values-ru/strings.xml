@@ -3,5 +3,16 @@
     <string name="app_name">Часы "Музыкальные Инструменты"</string>
     <string name="hours">Часы</string>
     <string name="minutes">Минуты</string>
+
+    <string name="inst_wood">Деревянная Укулеле</string>
+    <string name="inst_pink">Розовая Укулеле</string>
+    <string name="inst_violin">Скрипка</string>
+    <string name="inst_bow">Смычок</string>
+    <string name="inst_les_paul">Les Paul</string>
+    <string name="inst_gibson">Gibson Flying V</string>
+    <string name="inst_saxophone">Саксофон</string>
+    <string name="inst_oboe">Гобой</string>
+    <string name="inst_harp">Кельтская Арфа</string>
+
     <string name="visible_watch_name">Муз. Инструменты</string>
 </resources>
