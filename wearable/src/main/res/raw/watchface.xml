@@ -2,7 +2,7 @@
 <WatchFace width="480" height="480">
     <UserConfigurations>
         <!-- HOUR INSTRUMENT SELECTION (Integer IDs for logic, String Resources for names) -->
-        <ListConfiguration id="hour_idx" defaultValue="0" displayName="@string/hours">
+        <ListConfiguration id="hour_idx" defaultValue="0" displayName="@string/config_hours">
             <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
             <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
             <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />
@@ -14,7 +14,7 @@
             <ListOption id="8" displayName="@string/inst_harp" icon="@drawable/celtic_harp_hand" />
         </ListConfiguration>
         <!-- MINUTE INSTRUMENT SELECTION -->
-        <ListConfiguration id="min_idx" defaultValue="1" displayName="@string/minutes">
+        <ListConfiguration id="min_idx" defaultValue="1" displayName="@string/config_minutes">
             <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
             <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
             <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />

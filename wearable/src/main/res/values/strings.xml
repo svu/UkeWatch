@@ -15,8 +15,10 @@
     <string name="instrument_oboe" translatable="false">oboe</string>
     <string name="instrument_celtic_harp" translatable="false">celtic_harp</string>
 
-    <string name="hours">Hours</string>
-    <string name="minutes">Minutes</string>
+    <string name="config_hours">Hours</string>
+    <string name="config_hours_desc">Select the hour hand instrument style</string>
+    <string name="config_minutes">Minutes</string>
+    <string name="config_minutes_desc">Select the minute hand instrument style</string>
 
     <string name="inst_wood">Wood Ukulele</string>
     <string name="inst_pink">Pink Ukulele</string>

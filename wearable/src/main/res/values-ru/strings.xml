@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Часы "Музыкальные Инструменты"</string>
-    <string name="hours">Часы</string>
-    <string name="minutes">Минуты</string>
+    <string name="config_hours">Часы</string>
+    <string name="config_hours_desc">Выберите стиль стрелки часов</string>">
+    <string name="config_minutes">Минуты</string>
+    <string name="config_minutes_desc">Выберите стиль стрелки минут</string>">
 
     <string name="inst_wood">Деревянная Укулеле</string>
     <string name="inst_pink">Розовая Укулеле</string>
