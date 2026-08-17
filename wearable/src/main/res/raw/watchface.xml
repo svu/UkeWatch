@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WatchFace width="480" height="480">
     <UserConfigurations>
-        <!-- HOUR INSTRUMENT SELECTION (Restored String Resources for fixed labels) -->
-        <ListConfiguration id="hour_idx" defaultValue="0" displayName="Hour">
+        <!-- HOUR INSTRUMENT SELECTION (Integer IDs for logic, String Resources for labels) -->
+        <ListConfiguration id="hour_idx" defaultValue="0" displayName="@string/hours">
             <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
             <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
             <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />
@@ -14,7 +14,7 @@
             <ListOption id="8" displayName="@string/inst_harp" icon="@drawable/celtic_harp_hand" />
         </ListConfiguration>
         <!-- MINUTE INSTRUMENT SELECTION -->
-        <ListConfiguration id="min_idx" defaultValue="1" displayName="Minute">
+        <ListConfiguration id="min_idx" defaultValue="1" displayName="@string/minutes">
             <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
             <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
             <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />
@@ -32,7 +32,7 @@
             <Rectangle x="0" y="0" width="480" height="480"><Fill color="#000000" /></Rectangle>
         </PartDraw>
 
-        <!-- Marks (Locked - Perfectly Placed) -->
+        <!-- Marks (Perfectly Placed at Edge) -->
         <PartImage x="225" y="15" width="30" height="83"><Image resource="twelve_oc" /></PartImage>
         <PartImage x="450" y="212" width="18" height="55"><Image resource="three_oc" /></PartImage>
         <PartImage x="219" y="420" width="41" height="47"><Image resource="six_oc" /></PartImage>
@@ -48,7 +48,7 @@
         <PartImage x="45" y="130" width="10" height="10"><Image resource="hour" /></PartImage> <!-- 10 -->
         <PartImage x="120" y="55" width="10" height="10"><Image resource="hour" /></PartImage> <!-- 11 -->
 
-        <!-- Battery -->
+        <!-- Battery Staff -->
         <PartDraw x="350" y="90" width="100" height="100">
             <Line startX="10" startY="20" endX="60" endY="20"><Stroke color="#666666" thickness="1" /></Line>
             <Line startX="10" startY="35" endX="60" endY="35"><Stroke color="#666666" thickness="1" /></Line>
@@ -72,7 +72,7 @@
         </PartText>
 
         <!-- MINUTE HAND ISOLATION (Scale-based binary visibility) -->
-        <Group name="MinRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
+        <Group name="MinuteHands" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="[MINUTE] * 6" />
             <PartImage x="193" y="30" width="95" height="300"><Image resource="wood_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /></PartImage>
             <PartImage x="193" y="30" width="95" height="300"><Image resource="pink_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /></PartImage>
@@ -85,8 +85,8 @@
             <PartImage x="193" y="30" width="95" height="300"><Image resource="celtic_harp_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /></PartImage>
         </Group>
 
-        <!-- HOUR HAND ISOLATION (Enlarged to 240px) -->
-        <Group name="HourRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
+        <!-- HOUR HAND ISOLATION -->
+        <Group name="HourHands" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="([HOUR_0_11] + [MINUTE] / 60.0) * 30" />
             <PartImage x="195" y="72" width="90" height="240"><Image resource="wood_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /></PartImage>
             <PartImage x="195" y="72" width="90" height="240"><Image resource="pink_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /></PartImage>
