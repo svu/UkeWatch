@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="Wearable">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-08-17T16:10:00.773973Z">
+        <DropdownSelection timestamp="2026-08-17T23:25:59.214479Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=RFAW80LWRKW" />
@@ -26,10 +26,10 @@
       </SelectionState>
       <SelectionState runConfigName="Music Instruments watchface">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-08-17T16:10:00.773973Z">
+        <DropdownSelection timestamp="2026-08-17T18:54:25.394811Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=RFAW80LWRKW" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/sergeyudaltsov/.android/avd/Wear_OS_Large_Round.avd" />
             </handle>
           </Target>
         </DropdownSelection>

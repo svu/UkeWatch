@@ -9,8 +9,8 @@ android {
         applicationId "ie.udaltsoft.musicwatch"
         minSdk 34 // Required for WFF v2
         targetSdkVersion 35
-        versionCode 54
-        versionName '2.29'
+        versionCode 55
+        versionName '2.30'
     }
 
     buildTypes {
