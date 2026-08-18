@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Часы "Музыкальные Инструменты"</string>
+    <string name="visible_watch_name">Муз. Инструменты</string>
+
     <string name="config_hours">Часы</string>
-    <string name="config_hours_desc">Выберите стиль стрелки часов</string>">
+    <string name="config_hours_desc">Выберите стиль стрелки часов</string>
     <string name="config_minutes">Минуты</string>
-    <string name="config_minutes_desc">Выберите стиль стрелки минут</string>">
+    <string name="config_minutes_desc">Выберите стиль стрелки минут</string>
 
     <string name="inst_wood">Деревянная Укулеле</string>
     <string name="inst_pink">Розовая Укулеле</string>
@@ -16,11 +18,8 @@
     <string name="inst_oboe">Гобой</string>
     <string name="inst_harp">Кельтская Арфа</string>
 
-    <string name="visible_watch_name">Муз. Инструменты</string>
-
     <string name="config_flavor_ukuleles">Укулели</string>
     <string name="config_flavor_violin">Скрипка</string>
     <string name="config_flavor_rock">Рок</string>
     <string name="config_flavor_winds">Духовые</string>
-
 </resources>
