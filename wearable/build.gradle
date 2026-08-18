@@ -10,8 +10,8 @@ android {
         applicationId "ie.udaltsoft.musicwatch"
         minSdk 34 // Required for WFF v2
         targetSdkVersion 35
-        versionCode 24
-        versionName '2.40'
+        versionCode 25
+        versionName '2.50'
     }
 
     buildTypes {
@@ -29,6 +29,6 @@ android {
 }
 
 dependencies {
-    // Pure WFF projects only need play-services-wearable for some system functionalities
-    implementation 'com.google.android.gms:play-services-wearable:19.0.0'
+    // Pure WFF projects do not need any dependencies. 
+    // They are fully declarative XML-based packages.
 }
