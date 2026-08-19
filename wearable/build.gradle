@@ -32,3 +32,12 @@ dependencies {
     // Pure WFF projects do not need any dependencies. 
     // They are fully declarative XML-based packages.
 }
+
+// Automatically generate the 18-layer watchface XML from the template before every build
+tasks.register('generateWatchFace', Exec) {
+    workingDir projectDir
+    commandLine 'python3', '../tools/generate_watchface.py', '../tools/watchface.xml.template', 'src/main/res/raw/watchface.xml'
+}
+
+// Ensure the XML is regenerated whenever the template or script changes
+preBuild.dependsOn generateWatchFace
