@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">Music Instruments watchface</string>
-    <string name="visible_watch_name">Music Instruments</string>
+    <string name="app_name">Musician Watch Face</string>
+    <string name="visible_watch_name">Musician Watch Face</string>
 
     <string name="config_hours">Hours</string>
     <string name="config_hours_desc">Select the hour hand instrument style</string>

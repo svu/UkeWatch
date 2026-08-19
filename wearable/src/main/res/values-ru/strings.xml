@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Часы "Музыкальные Инструменты"</string>
-    <string name="visible_watch_name">Муз. Инструменты</string>
+    <string name="app_name">Часы Музыканта</string>
+    <string name="visible_watch_name">Часы Музыканта</string>
 
     <string name="config_hours">Часы</string>
     <string name="config_hours_desc">Выберите стиль стрелки часов</string>
