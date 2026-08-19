@@ -1,29 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <WatchFace width="480" height="480">
     <UserConfigurations>
-        <!-- HOUR INSTRUMENT SELECTION (Integer IDs for logic, String Resources for names) -->
+        <!-- HOUR INSTRUMENT SELECTION -->
         <ListConfiguration id="hour_idx" defaultValue="0" displayName="@string/config_hours">
-            <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
-            <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
-            <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />
-            <ListOption id="3" displayName="@string/inst_bow" icon="@drawable/bow_hand" />
-            <ListOption id="4" displayName="@string/inst_les_paul" icon="@drawable/les_paul_hand" />
-            <ListOption id="5" displayName="@string/inst_gibson" icon="@drawable/gibson_flying_v_hand" />
-            <ListOption id="6" displayName="@string/inst_saxophone" icon="@drawable/saxophone_hand" />
-            <ListOption id="7" displayName="@string/inst_oboe" icon="@drawable/oboe_hand" />
-            <ListOption id="8" displayName="@string/inst_harp" icon="@drawable/celtic_harp_hand" />
+            <GENERATE_OPTIONS />
         </ListConfiguration>
         <!-- MINUTE INSTRUMENT SELECTION -->
         <ListConfiguration id="min_idx" defaultValue="1" displayName="@string/config_minutes">
-            <ListOption id="0" displayName="@string/inst_wood" icon="@drawable/wood_uke_hand" />
-            <ListOption id="1" displayName="@string/inst_pink" icon="@drawable/pink_uke_hand" />
-            <ListOption id="2" displayName="@string/inst_violin" icon="@drawable/violin_hand" />
-            <ListOption id="3" displayName="@string/inst_bow" icon="@drawable/bow_hand" />
-            <ListOption id="4" displayName="@string/inst_les_paul" icon="@drawable/les_paul_hand" />
-            <ListOption id="5" displayName="@string/inst_gibson" icon="@drawable/gibson_flying_v_hand" />
-            <ListOption id="6" displayName="@string/inst_saxophone" icon="@drawable/saxophone_hand" />
-            <ListOption id="7" displayName="@string/inst_oboe" icon="@drawable/oboe_hand" />
-            <ListOption id="8" displayName="@string/inst_harp" icon="@drawable/celtic_harp_hand" />
+            <GENERATE_OPTIONS />
         </ListConfiguration>
 
         <Flavors defaultValue="ukulele">
@@ -34,12 +18,25 @@
         </Flavors>
     </UserConfigurations>
 
+    <!-- Master Instrument List: Drives both menus and hand rendering -->
+    <INSTRUMENTS>
+        <INSTRUMENT index="0" name="@string/inst_wood" image="wood_uke_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+        <INSTRUMENT index="1" name="@string/inst_pink" image="pink_uke_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+        <INSTRUMENT index="2" name="@string/inst_violin" image="violin_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+        <INSTRUMENT index="3" name="@string/inst_bow" image="bow_hand" h_x="110" h_y="58" h_w="260" h_h="260" m_x="90" m_y="30" m_w="300" m_h="300" />
+        <INSTRUMENT index="4" name="@string/inst_les_paul" image="les_paul_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+        <INSTRUMENT index="5" name="@string/inst_gibson" image="gibson_flying_v_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+        <INSTRUMENT index="6" name="@string/inst_saxophone" image="saxophone_hand" h_x="110" h_y="58" h_w="260" h_h="260" m_x="90" m_y="30" m_w="300" m_h="300" />
+        <INSTRUMENT index="7" name="@string/inst_oboe" image="oboe_hand" h_x="110" h_y="58" h_w="260" h_h="260" m_x="90" m_y="30" m_w="300" m_h="300" />
+        <INSTRUMENT index="8" name="@string/inst_harp" image="celtic_harp_hand" h_x="191" h_y="58" h_w="98" h_h="260" m_x="193" m_y="30" m_w="95" m_h="300" />
+    </INSTRUMENTS>
+
     <Scene>
         <PartDraw x="0" y="0" width="480" height="480">
             <Rectangle x="0" y="0" width="480" height="480"><Fill color="#000000" /></Rectangle>
         </PartDraw>
 
-        <!-- Marks (Pushed to absolute Edge R=235) -->
+        <!-- Marks (Perfectly Placed at Edge) -->
         <PartImage x="225" y="5" width="30" height="83"><Image resource="twelve_oc" /></PartImage>
         <PartImage x="460" y="212" width="18" height="55"><Image resource="three_oc" /></PartImage>
         <PartImage x="219" y="430" width="41" height="47"><Image resource="six_oc" /></PartImage>
@@ -71,7 +68,7 @@
             <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartImage>
 
-        <!-- Date (Mon AUG 17) -->
+        <!-- Date -->
         <PartText x="0" y="330" width="480" height="60">
             <Text align="CENTER">
                 <Font family="SYNC_TO_DEVICE" size="34" color="#cccccc">
@@ -87,29 +84,13 @@
         <!-- MINUTE HANDS -->
         <Group name="MinRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="[MINUTE] * 6" />
-            <HAND hand_type="minute" image="wood_uke_hand" x="193" y="30" width="95" height="300" index="0" />
-            <HAND hand_type="minute" image="pink_uke_hand" x="193" y="30" width="95" height="300" index="1" />
-            <HAND hand_type="minute" image="violin_hand" x="193" y="30" width="95" height="300" index="2" />
-            <HAND hand_type="minute" image="bow_hand" x="90" y="30" width="300" height="300" index="3" />
-            <HAND hand_type="minute" image="les_paul_hand" x="193" y="30" width="95" height="300" index="4" />
-            <HAND hand_type="minute" image="gibson_flying_v_hand" x="193" y="30" width="95" height="300" index="5" />
-            <HAND hand_type="minute" image="saxophone_hand" x="90" y="30" width="300" height="300" index="6" />
-            <HAND hand_type="minute" image="oboe_hand" x="90" y="30" width="300" height="300" index="7" />
-            <HAND hand_type="minute" image="celtic_harp_hand" x="193" y="30" width="95" height="300" index="8" />
+            <GENERATE_HANDS hand_type="minute" />
         </Group>
 
         <!-- HOUR HANDS -->
         <Group name="HourRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="([HOUR_0_11] + [MINUTE] / 60.0) * 30" />
-            <HAND hand_type="hour" image="wood_uke_hand" x="191" y="58" width="98" height="260" index="0" />
-            <HAND hand_type="hour" image="pink_uke_hand" x="191" y="58" width="98" height="260" index="1" />
-            <HAND hand_type="hour" image="violin_hand" x="191" y="58" width="98" height="260" index="2" />
-            <HAND hand_type="hour" image="bow_hand" x="110" y="58" width="260" height="260" index="3" />
-            <HAND hand_type="hour" image="les_paul_hand" x="191" y="58" width="98" height="260" index="4" />
-            <HAND hand_type="hour" image="gibson_flying_v_hand" x="191" y="58" width="98" height="260" index="5" />
-            <HAND hand_type="hour" image="saxophone_hand" x="110" y="58" width="260" height="260" index="6" />
-            <HAND hand_type="hour" image="oboe_hand" x="110" y="58" width="260" height="260" index="7" />
-            <HAND hand_type="hour" image="celtic_harp_hand" x="191" y="58" width="98" height="260" index="8" />
+            <GENERATE_HANDS hand_type="hour" />
         </Group>
 
         <!-- PERFECT RED TICKING HAND -->

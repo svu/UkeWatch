@@ -2,36 +2,39 @@ import xml.etree.ElementTree as ET
 import os
 import sys
 
-def create_hand_elements(hand_elem):
-    # Get attributes from the <HAND /> tag
-    hand_type = hand_elem.get('hand_type', 'minute')
-    image = hand_elem.get('image')
-    ambient = hand_elem.get('ambient')
-    if not ambient and image:
-        ambient = image.replace('_hand', '_ambient_hand')
-    x = hand_elem.get('x')
-    y = hand_elem.get('y')
-    width = hand_elem.get('width')
-    height = hand_elem.get('height')
-    index = hand_elem.get('index')
+def create_hand_xml_nodes(instrument, hand_type):
+    index = instrument.get('index')
+    image = instrument.get('image')
+    ambient = instrument.get('ambient') or image.replace('_hand', '_ambient_hand')
     
-    config = "hour_idx" if hand_type == "hour" else "min_idx"
+    if hand_type == 'hour':
+        x, y, w, h = instrument.get('h_x'), instrument.get('h_y'), instrument.get('h_w'), instrument.get('h_h')
+        config = "hour_idx"
+    else:
+        x, y, w, h = instrument.get('m_x'), instrument.get('m_y'), instrument.get('m_w'), instrument.get('m_h')
+        config = "min_idx"
+
+    # Active
+    active = ET.Element('PartImage', x=x, y=y, width=w, height=h)
+    ET.SubElement(active, 'Image', resource=image)
+    ET.SubElement(active, 'Variant', mode="AMBIENT", target="alpha", value="0")
+    ET.SubElement(active, 'Transform', target="scaleX", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
+    ET.SubElement(active, 'Transform', target="scaleY", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
+
+    # Ambient
+    ambient_el = ET.Element('PartImage', x=x, y=y, width=w, height=h, alpha="0")
+    ET.SubElement(ambient_el, 'Image', resource=ambient)
+    ET.SubElement(ambient_el, 'Variant', mode="AMBIENT", target="alpha", value="255")
+    ET.SubElement(ambient_el, 'Transform', target="scaleX", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
+    ET.SubElement(ambient_el, 'Transform', target="scaleY", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
     
-    # Create the Active PartImage
-    active_part = ET.Element('PartImage', x=x, y=y, width=width, height=height)
-    ET.SubElement(active_part, 'Image', resource=image)
-    ET.SubElement(active_part, 'Variant', mode="AMBIENT", target="alpha", value="0")
-    ET.SubElement(active_part, 'Transform', target="scaleX", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
-    ET.SubElement(active_part, 'Transform', target="scaleY", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
-    
-    # Create the Ambient PartImage
-    ambient_part = ET.Element('PartImage', x=x, y=y, width=width, height=height, alpha="0")
-    ET.SubElement(ambient_part, 'Image', resource=ambient)
-    ET.SubElement(ambient_part, 'Variant', mode="AMBIENT", target="alpha", value="255")
-    ET.SubElement(ambient_part, 'Transform', target="scaleX", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
-    ET.SubElement(ambient_part, 'Transform', target="scaleY", value=f"[CONFIGURATION.{config}] == {index} ? 1 : 0")
-    
-    return [active_part, ambient_part]
+    return [active, ambient_el]
+
+def create_option_node(instrument):
+    return ET.Element('ListOption', 
+                      id=instrument.get('index'), 
+                      displayName=instrument.get('name'), 
+                      icon="@drawable/" + instrument.get('image'))
 
 def main():
     if len(sys.argv) < 3:
@@ -45,37 +48,47 @@ def main():
         print(f"Error: {template_path} not found.")
         sys.exit(1)
 
-    # Parse the template XML
     tree = ET.parse(template_path)
     root = tree.getroot()
 
-    # We need to find all parents that contain <HAND> tags
-    # Since we are modifying the list as we iterate, we'll collect parents first
-    # Or just iterate through the Groups where we know HAND tags live.
-    for group in root.findall(".//Group"):
-        # Find all HAND elements in this group
-        hand_elements = group.findall("HAND")
-        for hand in hand_elements:
-            # Generate replacement elements
-            new_elements = create_hand_elements(hand)
-            
-            # Find the index of the HAND tag in the parent group
-            # Convert to list to find the element
-            children = list(group)
-            idx = children.index(hand)
-            
-            # Remove the tag and insert the new ones
-            group.remove(hand)
-            for i, new_el in enumerate(new_elements):
-                group.insert(idx + i, new_el)
+    # 1. Extract instruments
+    instruments_root = root.find("INSTRUMENTS")
+    if instruments_root is None:
+        print("Error: <INSTRUMENTS> block not found in template.")
+        sys.exit(1)
+    
+    instruments = list(instruments_root.findall("INSTRUMENT"))
+    # Remove the block from the final output
+    root.remove(instruments_root)
 
-    # Write the result (using ET.indent for pretty printing if available, else standard write)
+    # 2. Process placeholders
+    # We'll look for custom tags: <GENERATE_OPTIONS /> and <GENERATE_HANDS />
+    
+    # Process ListConfigurations
+    for config in root.findall(".//ListConfiguration"):
+        gen_options = config.find("GENERATE_OPTIONS")
+        if gen_options is not None:
+            config.remove(gen_options)
+            for inst in instruments:
+                config.append(create_option_node(inst))
+
+    # Process Hand Groups
+    for group in root.findall(".//Group"):
+        gen_hands = group.find("GENERATE_HANDS")
+        if gen_hands is not None:
+            hand_type = gen_hands.get("hand_type")
+            group.remove(gen_hands)
+            for inst in instruments:
+                for node in create_hand_xml_nodes(inst, hand_type):
+                    group.append(node)
+
+    # Indent and save
     if hasattr(ET, 'indent'):
         ET.indent(tree, space="    ", level=0)
     
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     tree.write(output_path, encoding='utf-8', xml_declaration=True)
-    print(f"Success! Properly parsed XML and generated {output_path}")
+    print(f"Success! Generated {output_path} from single instrument list.")
 
 if __name__ == "__main__":
     main()
