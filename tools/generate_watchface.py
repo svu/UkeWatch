@@ -6,8 +6,9 @@ def generate_hand_xml(params):
     # Parse parameters using regex to handle key="value"
     p = {m.group(1): m.group(2) for m in re.finditer(r'(\w+)\s*=\s*"([^"]+)"', params)}
     
-    # Identify if it's an hour or minute hand based on the width/height
-    config = "hour_idx" if int(p.get('height', 300)) < 280 else "min_idx"
+    # Identify if it's an hour or minute hand
+    hand_type = p.get('hand_type', 'minute')
+    config = "hour_idx" if hand_type == "hour" else "min_idx"
     
     # Matches the verified "Scale-Isolation" logic
     return f"""
