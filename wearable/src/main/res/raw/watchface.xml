@@ -74,11 +74,13 @@
             <Line startX="10" startY="72" endX="110" endY="72"><Stroke color="#666666" thickness="4" /></Line>
             <Line startX="10" startY="98" endX="110" endY="98"><Stroke color="#666666" thickness="4" /></Line>
             <Line startX="10" startY="124" endX="110" endY="124"><Stroke color="#666666" thickness="4" /></Line>
+            <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartDraw>
         <!-- Note represents Battery: 100% over top line, 0% under bottom line -->
         <PartImage x="322" y="64" width="36" height="24">
             <Image resource="note" />
             <Transform target="y" value="64 + (100 - [BATTERY_PERCENT]) * 1.32" />
+            <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartImage>
 
         <!-- Date (Mon AUG 17) -->
@@ -97,29 +99,191 @@
         <!-- MINUTE HAND ISOLATION (Scale-based binary visibility ensures NO overlapping) -->
         <Group name="MinRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="[MINUTE] * 6" />
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="wood_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /></PartImage>
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="pink_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /></PartImage>
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="violin_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" /></PartImage>
-            <PartImage x="90" y="30" width="300" height="300"><Image resource="bow_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" /></PartImage>
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="les_paul_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" /></PartImage>
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="gibson_flying_v_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" /></PartImage>
-            <PartImage x="90" y="30" width="300" height="300"><Image resource="saxophone_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" /></PartImage>
-            <PartImage x="90" y="30" width="300" height="300"><Image resource="oboe_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" /></PartImage>
-            <PartImage x="193" y="30" width="95" height="300"><Image resource="celtic_harp_hand" /><Transform target="scaleX" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /></PartImage>
+
+            <!-- Wood -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="wood_uke_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="wood_uke_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 0 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Pink -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="pink_uke_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="pink_uke_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 1 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Violin -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="violin_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="violin_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 2 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Bow -->
+            <PartImage x="90" y="30" width="300" height="300">
+                <Image resource="bow_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="90" y="30" width="300" height="300" alpha="0">
+                <Image resource="bow_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 3 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Les Paul -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="les_paul_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="les_paul_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 4 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Gibson Flying V -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="gibson_flying_v_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="gibson_flying_v_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 5 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Saxophone -->
+            <PartImage x="90" y="30" width="300" height="300">
+                <Image resource="saxophone_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="90" y="30" width="300" height="300" alpha="0">
+                <Image resource="saxophone_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 6 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Oboe -->
+            <PartImage x="90" y="30" width="300" height="300">
+                <Image resource="oboe_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="90" y="30" width="300" height="300" alpha="0">
+                <Image resource="oboe_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 7 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Celtic Harp -->
+            <PartImage x="193" y="30" width="95" height="300">
+                <Image resource="celtic_harp_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="193" y="30" width="95" height="300" alpha="0">
+                <Image resource="celtic_harp_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.min_idx] == 8 ? 1 : 0" />
+            </PartImage>
         </Group>
 
         <!-- HOUR HAND ISOLATION (Enlarged to 260px) -->
         <Group name="HourRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
             <Transform target="angle" value="([HOUR_0_11] + [MINUTE] / 60.0) * 30" />
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="wood_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /></PartImage>
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="pink_uke_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /></PartImage>
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="violin_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" /></PartImage>
-            <PartImage x="110" y="58" width="260" height="260"><Image resource="bow_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" /></PartImage>
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="les_paul_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" /></PartImage>
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="gibson_flying_v_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" /></PartImage>
-            <PartImage x="110" y="58" width="260" height="260"><Image resource="saxophone_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" /></PartImage>
-            <PartImage x="110" y="58" width="260" height="260"><Image resource="oboe_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" /></PartImage>
-            <PartImage x="191" y="58" width="98" height="260"><Image resource="celtic_harp_hand" /><Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" /></PartImage>
+
+            <!-- Wood -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="wood_uke_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="wood_uke_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 0 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Pink -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="pink_uke_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="pink_uke_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 1 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Violin -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="violin_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="violin_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 2 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Bow -->
+            <PartImage x="110" y="58" width="260" height="260">
+                <Image resource="bow_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="110" y="58" width="260" height="260" alpha="0">
+                <Image resource="bow_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 3 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Les Paul -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="les_paul_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="les_paul_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 4 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Gibson Flying V -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="gibson_flying_v_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="gibson_flying_v_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 5 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Saxophone -->
+            <PartImage x="110" y="58" width="260" height="260">
+                <Image resource="saxophone_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="110" y="58" width="260" height="260" alpha="0">
+                <Image resource="saxophone_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 6 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Oboe -->
+            <PartImage x="110" y="58" width="260" height="260">
+                <Image resource="oboe_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="110" y="58" width="260" height="260" alpha="0">
+                <Image resource="oboe_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 7 ? 1 : 0" />
+            </PartImage>
+
+            <!-- Celtic Harp -->
+            <PartImage x="191" y="58" width="98" height="260">
+                <Image resource="celtic_harp_hand" /><Variant mode="AMBIENT" target="alpha" value="0" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" />
+            </PartImage>
+            <PartImage x="191" y="58" width="98" height="260" alpha="0">
+                <Image resource="celtic_harp_ambient_hand" /><Variant mode="AMBIENT" target="alpha" value="255" />
+                <Transform target="scaleX" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" /><Transform target="scaleY" value="[CONFIGURATION.hour_idx] == 8 ? 1 : 0" />
+            </PartImage>
         </Group>
 
         <!-- PERFECT RED TICKING HAND -->
@@ -130,6 +294,7 @@
             <Transform target="angle" value="[SECOND] * 6" />
             <PartDraw x="238" y="25" width="4" height="215">
                 <Rectangle x="0" y="0" width="4" height="215"><Fill color="#ff0000" /></Rectangle>
+                <Variant mode="AMBIENT" target="alpha" value="0" />
             </PartDraw>
         </Group>
 
