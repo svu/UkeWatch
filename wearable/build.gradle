@@ -41,3 +41,8 @@ tasks.register('generateWatchFace', Exec) {
 
 // Ensure the XML is regenerated whenever the template or script changes
 preBuild.dependsOn generateWatchFace
+
+// Clean up the generated watchface.xml when running the clean task
+clean {
+    delete 'src/main/res/raw/watchface.xml'
+}
