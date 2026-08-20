@@ -35,6 +35,10 @@
         <PartDraw x="0" y="0" width="480" height="480">
             <Rectangle x="0" y="0" width="480" height="480"><Fill color="#000000" /></Rectangle>
         </PartDraw>
+        <PartImage x="0" y="0" width="480" height="480">
+            <Image resource="wave" />
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+        </PartImage>
 
         <!-- Marks (Perfectly Placed at Edge) -->
         <PartImage x="225" y="5" width="30" height="83"><Image resource="twelve_oc" /></PartImage>
@@ -54,11 +58,12 @@
 
         <!-- Battery Staff -->
         <PartDraw x="300" y="80" width="100" height="144">
-            <Line startX="10" startY="20" endX="90" endY="20"><Stroke color="#666666" thickness="4" /></Line>
-            <Line startX="10" startY="46" endX="90" endY="46"><Stroke color="#666666" thickness="4" /></Line>
-            <Line startX="10" startY="72" endX="90" endY="72"><Stroke color="#666666" thickness="4" /></Line>
-            <Line startX="10" startY="98" endX="90" endY="98"><Stroke color="#666666" thickness="4" /></Line>
-            <Line startX="10" startY="124" endX="90" endY="124"><Stroke color="#666666" thickness="4" /></Line>
+            <!-- 65% opacity - #A6 alpha -->
+            <Line startX="10" startY="20" endX="90" endY="20"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
+            <Line startX="10" startY="46" endX="90" endY="46"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
+            <Line startX="10" startY="72" endX="90" endY="72"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
+            <Line startX="10" startY="98" endX="90" endY="98"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
+            <Line startX="10" startY="124" endX="90" endY="124"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
             <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartDraw>
         <!-- Note represents Battery: 100% over top line, 0% under bottom line -->
@@ -71,8 +76,9 @@
         <!-- Date -->
         <PartText x="0" y="330" width="480" height="60">
             <Text align="CENTER">
-                <Font family="SYNC_TO_DEVICE" size="34" color="#cccccc">
-                    <Template>%s %s %d
+                <!-- 85% opacity - #D9 alpha -->
+                <Font family="SYNC_TO_DEVICE" size="34" color="#D9B8BECE">
+                    <Template>%s, %s %d
                         <Parameter expression="[DAY_OF_WEEK_S]" />
                         <Parameter expression="[MONTH_S]" />
                         <Parameter expression="[DAY]" />
@@ -80,6 +86,18 @@
                 </Font>
             </Text>
         </PartText>
+
+        <!-- PERFECT PINK TICKING HAND -->
+        <AnalogClock x="0" y="0" width="480" height="480">
+            <SecondHand resource="twelve_oc" x="240" y="240" width="1" height="1" alpha="1" />
+        </AnalogClock>
+        <Group name="SecondRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
+            <Transform target="angle" value="[SECOND] * 6" />
+            <PartDraw x="238" y="25" width="4" height="215">
+                <Rectangle x="0" y="0" width="5" height="215"><Fill color="#FF6ACB" /></Rectangle>
+                <Variant mode="AMBIENT" target="alpha" value="0" />
+            </PartDraw>
+        </Group>
 
         <!-- MINUTE HANDS -->
         <Group name="MinRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
@@ -93,20 +111,5 @@
             <GENERATE_HANDS hand_type="hour" />
         </Group>
 
-        <!-- PERFECT RED TICKING HAND -->
-        <AnalogClock x="0" y="0" width="480" height="480">
-            <SecondHand resource="twelve_oc" x="240" y="240" width="1" height="1" alpha="1" />
-        </AnalogClock>
-        <Group name="SecondRotation" x="0" y="0" width="480" height="480" pivotX="0.5" pivotY="0.5">
-            <Transform target="angle" value="[SECOND] * 6" />
-            <PartDraw x="238" y="25" width="4" height="215">
-                <Rectangle x="0" y="0" width="4" height="215"><Fill color="#ff0000" /></Rectangle>
-                <Variant mode="AMBIENT" target="alpha" value="0" />
-            </PartDraw>
-        </Group>
-
-        <PartDraw x="237" y="237" width="6" height="6">
-            <Ellipse x="0" y="0" width="6" height="6"><Fill color="#ffffff" /></Ellipse>
-        </PartDraw>
     </Scene>
 </WatchFace>
