@@ -70,6 +70,14 @@
         <PartImage x="332" y="74" width="36" height="24">
             <Image resource="note" />
             <Transform target="y" value="74 + (100 - [BATTERY_PERCENT]) * 1.32" />
+            <Transform target="alpha" value="[BATTERY_CHARGING_STATUS] ? 0 : 255" />
+            <Variant mode="AMBIENT" target="alpha" value="0" />
+        </PartImage>
+
+        <PartImage x="332" y="74" width="36" height="24">
+            <Image resource="note_ac" />
+            <Transform target="y" value="74 + (100 - [BATTERY_PERCENT]) * 1.32" />
+            <Transform target="alpha" value="[BATTERY_CHARGING_STATUS] ? 255 : 0" />
             <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartImage>
 
