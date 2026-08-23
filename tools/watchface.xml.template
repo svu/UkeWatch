@@ -58,12 +58,12 @@
 
         <!-- Battery Staff -->
         <PartDraw x="300" y="80" width="100" height="144">
-            <!-- 65% opacity - #A6 alpha -->
-            <Line startX="10" startY="20" endX="90" endY="20"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
-            <Line startX="10" startY="46" endX="90" endY="46"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
-            <Line startX="10" startY="72" endX="90" endY="72"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
-            <Line startX="10" startY="98" endX="90" endY="98"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
-            <Line startX="10" startY="124" endX="90" endY="124"><Stroke color="#A6C9CDDA" thickness="4" /></Line>
+            <!-- 70% opacity - #B3 alpha -->
+            <Line startX="10" startY="20" endX="90" endY="20"><Stroke color="#B3A3A9BA" thickness="4" /></Line>
+            <Line startX="10" startY="46" endX="90" endY="46"><Stroke color="#B3A3A9BA" thickness="4" /></Line>
+            <Line startX="10" startY="72" endX="90" endY="72"><Stroke color="#B3A3A9BA" thickness="4" /></Line>
+            <Line startX="10" startY="98" endX="90" endY="98"><Stroke color="#B3A3A9BA" thickness="4" /></Line>
+            <Line startX="10" startY="124" endX="90" endY="124"><Stroke color="#B3A3A9BA" thickness="4" /></Line>
             <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartDraw>
         <!-- Note represents Battery: 100% over top line, 0% under bottom line -->
