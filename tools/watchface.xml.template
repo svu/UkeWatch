@@ -36,7 +36,7 @@
             <Rectangle x="0" y="0" width="480" height="480"><Fill color="#000000" /></Rectangle>
         </PartDraw>
         <PartImage x="0" y="0" width="480" height="480">
-            <Image resource="wave" />
+            <Image resource="abstract_harmony" />
             <Variant mode="AMBIENT" target="alpha" value="0" />
         </PartImage>
 
