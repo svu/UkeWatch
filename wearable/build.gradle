@@ -8,7 +8,7 @@ android {
 
     defaultConfig {
         applicationId "ie.udaltsoft.musicwatch"
-        minSdk 34 // Required for WFF v2
+        minSdk 35 // Required for WFF v2
         targetSdkVersion 35
         versionCode 31
         versionName '3.1'
